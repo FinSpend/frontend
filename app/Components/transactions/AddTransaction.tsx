@@ -1,12 +1,17 @@
-
+'use client'
 import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { Card } from '@/app/Components/ui/Card';
+import { useData } from '@/app/lib/data-context';
+import type { TransactionCategory } from '@/app/types';
 
 interface AddTransactionProps {
   onBack: () => void;
+  onSuccess?: (message: string) => void;
 }
 
-export function AddTransaction({ onBack }: AddTransactionProps) {
+export function AddTransaction({ onBack, onSuccess }: AddTransactionProps) {
+  const { addTransaction } = useData();
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [formData, setFormData] = useState({
     name: '',
@@ -16,12 +21,20 @@ export function AddTransaction({ onBack }: AddTransactionProps) {
     notes: '',
   });
 
-  const expenseCategories = ['Makanan', 'Transport', 'Belanja', 'Hiburan', 'Tagihan', 'Kesehatan', 'Lainnya'];
-  const incomeCategories = ['Gaji', 'Bonus', 'Investasi', 'Freelance', 'Lainnya'];
+  const expenseCategories: TransactionCategory[] = ['Makanan', 'Transport', 'Belanja', 'Hiburan', 'Tagihan', 'Kesehatan', 'Lainnya'];
+  const incomeCategories: TransactionCategory[] = ['Pemasukan'];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    alert('Transaksi berhasil ditambahkan! (Demo mode)');
+    const rawAmount = Number(formData.amount);
+    const amount = type === 'expense' ? -rawAmount : rawAmount;
+    addTransaction({
+      name: formData.name,
+      amount,
+      category: formData.category as TransactionCategory,
+      date: formData.date,
+    });
+    onSuccess?.('Transaksi berhasil ditambahkan!');
     onBack();
   };
 
@@ -32,14 +45,14 @@ export function AddTransaction({ onBack }: AddTransactionProps) {
         <button
           onClick={onBack}
           className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+          aria-label="Kembali ke daftar transaksi"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h2 className="text-2xl">Tambah Transaksi</h2>
       </div>
 
-      {/* Form */}
-      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+      <Card>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Type Toggle */}
           <div>
@@ -168,7 +181,7 @@ export function AddTransaction({ onBack }: AddTransactionProps) {
             Simpan Transaksi
           </button>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }

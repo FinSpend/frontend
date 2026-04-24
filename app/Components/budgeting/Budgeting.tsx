@@ -1,16 +1,11 @@
+'use client'
 import { AlertCircle, TrendingUp } from 'lucide-react';
-
-const budgets = [
-  { id: 1, category: 'Makanan', spent: 1200000, limit: 1500000, percentage: 80, icon: '🍔' },
-  { id: 2, category: 'Transport', spent: 800000, limit: 1000000, percentage: 80, icon: '🚗' },
-  { id: 3, category: 'Belanja', spent: 1500000, limit: 1200000, percentage: 125, icon: '🛍️' },
-  { id: 4, category: 'Hiburan', spent: 600000, limit: 800000, percentage: 75, icon: '🎬' },
-  { id: 5, category: 'Tagihan', spent: 450000, limit: 500000, percentage: 90, icon: '💳' },
-  { id: 6, category: 'Kesehatan', spent: 200000, limit: 500000, percentage: 40, icon: '🏥' },
-];
+import { formatIDR } from '@/app/lib/format';
+import { useData } from '@/app/lib/data-context';
 
 export function Budgeting() {
-  const overBudget = budgets.filter(b => b.percentage > 100);
+  const { budgets } = useData();
+  const overBudget = budgets.filter(b => b.spent > b.limit);
 
   return (
     <div className="space-y-6">
@@ -55,60 +50,59 @@ export function Budgeting() {
 
       {/* Budget Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {budgets.map((budget) => (
-          <div
-            key={budget.id}
-            className={`bg-white rounded-lg p-6 shadow-sm border ${
-              budget.percentage > 100 ? 'border-red-300 bg-red-50' : 'border-gray-200'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{budget.icon}</span>
-                <div>
-                  <h3 className="text-lg">{budget.category}</h3>
-                  <p className="text-xs text-gray-500">
-                    Rp {budget.spent.toLocaleString('id-ID')} / Rp {budget.limit.toLocaleString('id-ID')}
-                  </p>
+        {budgets.map((budget) => {
+          const pct = Math.round((budget.spent / budget.limit) * 100);
+          return (
+            <div
+              key={budget.id}
+              className={`bg-white rounded-lg p-6 shadow-sm border ${
+                pct > 100 ? 'border-red-300 bg-red-50' : 'border-gray-200'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{budget.icon}</span>
+                  <div>
+                    <h3 className="text-lg">{budget.category}</h3>
+                    <p className="text-xs text-gray-500">
+                      {formatIDR(budget.spent)} / {formatIDR(budget.limit)}
+                    </p>
+                  </div>
+                </div>
+                <div className={`text-right ${pct > 100 ? 'text-red-600' : 'text-gray-700'}`}>
+                  <p className="text-2xl">{pct}%</p>
+                  {pct > 100 && (
+                    <p className="text-xs">+{formatIDR(budget.spent - budget.limit)}</p>
+                  )}
                 </div>
               </div>
-              <div className={`text-right ${budget.percentage > 100 ? 'text-red-600' : 'text-gray-700'}`}>
-                <p className="text-2xl">{budget.percentage}%</p>
-                {budget.percentage > 100 && (
-                  <p className="text-xs">+Rp {(budget.spent - budget.limit).toLocaleString('id-ID')}</p>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className={`h-3 rounded-full transition-all ${
+                    pct > 100 ? 'bg-red-500' : pct > 80 ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${Math.min(pct, 100)}%` }}
+                />
+              </div>
+
+              {/* Status */}
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                  Sisa: {formatIDR(Math.max(0, budget.limit - budget.spent))}
+                </span>
+                {pct > 100 ? (
+                  <span className="text-xs text-red-600">Melebihi budget!</span>
+                ) : pct > 80 ? (
+                  <span className="text-xs text-yellow-600">Hampir habis</span>
+                ) : (
+                  <span className="text-xs text-green-600">Aman</span>
                 )}
               </div>
             </div>
-
-            {/* Progress Bar */}
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div
-                className={`h-3 rounded-full transition-all ${
-                  budget.percentage > 100
-                    ? 'bg-red-500'
-                    : budget.percentage > 80
-                    ? 'bg-yellow-500'
-                    : 'bg-green-500'
-                }`}
-                style={{ width: `${Math.min(budget.percentage, 100)}%` }}
-              />
-            </div>
-
-            {/* Status */}
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs text-gray-500">
-                Sisa: Rp {Math.max(0, budget.limit - budget.spent).toLocaleString('id-ID')}
-              </span>
-              {budget.percentage > 100 ? (
-                <span className="text-xs text-red-600">Melebihi budget!</span>
-              ) : budget.percentage > 80 ? (
-                <span className="text-xs text-yellow-600">Hampir habis</span>
-              ) : (
-                <span className="text-xs text-green-600">Aman</span>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Set Budget Button */}

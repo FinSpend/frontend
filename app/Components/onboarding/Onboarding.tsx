@@ -1,5 +1,8 @@
+'use client'
 import { useState } from 'react';
-import { CheckCircle, Circle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
+import { formatIDR } from '@/app/lib/format';
+import { Card } from '@/app/Components/ui/Card';
 
 const steps = [
   { id: 1, title: 'Profil Keuangan' },
@@ -26,7 +29,11 @@ const professions = [
   'Lainnya',
 ];
 
-export function Onboarding() {
+interface OnboardingProps {
+  onFinish?: () => void;
+}
+
+export function Onboarding({ onFinish }: OnboardingProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     monthlyIncome: '',
@@ -50,7 +57,7 @@ export function Onboarding() {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
-      alert('Onboarding selesai! Welcome to the app.');
+      onFinish?.();
     }
   };
 
@@ -69,7 +76,7 @@ export function Onboarding() {
       </div>
 
       {/* Step Indicator */}
-      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+      <Card>
         <div className="flex items-center justify-between mb-8">
           {steps.map((step, index) => (
             <div key={step.id} className="flex items-center flex-1">
@@ -80,6 +87,7 @@ export function Onboarding() {
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-500'
                   }`}
+                  aria-label={`Langkah ${step.id}: ${step.title}${currentStep > step.id ? ' (selesai)' : currentStep === step.id ? ' (aktif)' : ''}`}
                 >
                   {currentStep > step.id ? (
                     <CheckCircle className="w-6 h-6" />
@@ -184,7 +192,7 @@ export function Onboarding() {
                       <p className="text-sm text-gray-600">{goal.description}</p>
                     </div>
                     {formData.selectedGoals.includes(goal.id) && (
-                      <CheckCircle className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                      <CheckCircle className="w-6 h-6 text-blue-600 shrink-0" />
                     )}
                   </div>
                 </button>
@@ -237,9 +245,9 @@ export function Onboarding() {
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
               <h4 className="mb-2">Ringkasan Profil Anda</h4>
               <div className="space-y-1 text-sm text-gray-700">
-                <p>• Pemasukan: Rp {Number(formData.monthlyIncome || 0).toLocaleString('id-ID')}</p>
-                <p>• Pengeluaran: Rp {Number(formData.monthlyExpense || 0).toLocaleString('id-ID')}</p>
-                <p>• Tabungan: Rp {Number(formData.currentSavings || 0).toLocaleString('id-ID')}</p>
+                <p>• Pemasukan: {formatIDR(Number(formData.monthlyIncome || 0))}</p>
+                <p>• Pengeluaran: {formatIDR(Number(formData.monthlyExpense || 0))}</p>
+                <p>• Tabungan: {formatIDR(Number(formData.currentSavings || 0))}</p>
                 <p>• Tujuan: {formData.selectedGoals.length} tujuan dipilih</p>
               </div>
             </div>
@@ -266,7 +274,7 @@ export function Onboarding() {
             {currentStep === 3 ? 'Selesai' : 'Lanjut'}
           </button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

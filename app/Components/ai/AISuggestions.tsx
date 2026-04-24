@@ -1,4 +1,7 @@
-import { Sparkles, TrendingUp, CheckCircle, Crown, Lock } from 'lucide-react';
+import { Sparkles, CheckCircle, Crown } from 'lucide-react';
+import { formatIDR } from '@/app/lib/format';
+import { Card } from '@/app/Components/ui/Card';
+import { PremiumBanner } from '@/app/Components/ui/PremiumBanner';
 
 const suggestions = [
   {
@@ -47,11 +50,10 @@ export function AISuggestions() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <h2 className="text-2xl">Saran AI</h2>
 
       {/* Financial Score */}
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 border border-purple-200">
+      <Card>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg mb-1">Skor Keuangan Anda</h3>
@@ -64,14 +66,14 @@ export function AISuggestions() {
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div
-            className="h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+            className="h-3 rounded-full bg-linear-to-r from-purple-500 to-pink-500"
             style={{ width: `${financialScore}%` }}
           />
         </div>
         <p className="text-sm text-gray-600 mt-3">
           Bagus! Tingkatkan skor dengan menerapkan saran di bawah.
         </p>
-      </div>
+      </Card>
 
       {/* Priority Suggestions */}
       <div>
@@ -81,7 +83,7 @@ export function AISuggestions() {
         </h3>
         <div className="space-y-4">
           {suggestions.map((suggestion) => (
-            <div key={suggestion.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <Card key={suggestion.id}>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <h4 className="mb-2">{suggestion.title}</h4>
@@ -108,7 +110,7 @@ export function AISuggestions() {
               <button className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
                 Terapkan Saran
               </button>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
@@ -132,7 +134,7 @@ export function AISuggestions() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-green-600">+Rp {suggestion.savedAmount.toLocaleString('id-ID')}</p>
+                <p className="text-sm text-green-600">+{formatIDR(suggestion.savedAmount)}</p>
                 <p className="text-xs text-gray-500">Hemat</p>
               </div>
             </div>
@@ -140,41 +142,18 @@ export function AISuggestions() {
         </div>
       </div>
 
-      {/* Premium Teaser */}
-      <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg p-6 border-2 border-amber-200">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <Crown className="w-6 h-6 text-amber-600" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg mb-2 flex items-center gap-2">
-              Upgrade ke Premium
-              <span className="px-2 py-1 bg-amber-200 text-amber-800 rounded text-xs">Baru!</span>
-            </h3>
-            <p className="text-sm text-gray-700 mb-4">
-              Dapatkan saran AI yang lebih personal, prediksi keuangan 6 bulan ke depan,
-              dan analisis mendalam untuk mencapai tujuan finansial lebih cepat.
-            </p>
-            <ul className="space-y-2 mb-4">
-              <li className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                Saran AI unlimited & real-time
-              </li>
-              <li className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                Prediksi keuangan 6 bulan
-              </li>
-              <li className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                Export laporan PDF tanpa batas
-              </li>
-            </ul>
-            <button className="bg-linear-to-r from-amber-500 to-yellow-500 text-white px-6 py-3 rounded-lg hover:from-amber-600 hover:to-yellow-600 transition-all">
-              Mulai Trial 7 Hari Gratis
-            </button>
-          </div>
-        </div>
-      </div>
+      <PremiumBanner
+        icon={<Crown className="w-6 h-6 text-amber-600" />}
+        title="Upgrade ke Premium"
+        badge="Baru!"
+        description="Dapatkan saran AI yang lebih personal, prediksi keuangan 6 bulan ke depan, dan analisis mendalam untuk mencapai tujuan finansial lebih cepat."
+        features={[
+          'Saran AI unlimited & real-time',
+          'Prediksi keuangan 6 bulan',
+          'Export laporan PDF tanpa batas',
+        ]}
+        ctaLabel="Mulai Trial 7 Hari Gratis"
+      />
     </div>
   );
 }

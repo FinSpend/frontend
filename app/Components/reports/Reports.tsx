@@ -1,4 +1,6 @@
-import { FileText, Download, Lock, Calendar } from 'lucide-react';
+import { FileText, Lock, Calendar } from 'lucide-react';
+import { Card } from '@/app/Components/ui/Card';
+import { PremiumBanner } from '@/app/Components/ui/PremiumBanner';
 
 const reports = [
   {
@@ -42,28 +44,17 @@ export function Reports() {
         </button>
       </div>
 
-      {/* Premium Notice */}
-      <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg p-6 border-2 border-amber-200">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <Lock className="w-6 h-6 text-amber-600" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg mb-2">Export PDF & Excel Tersedia di Premium</h3>
-            <p className="text-sm text-gray-700 mb-3">
-              Upgrade ke Premium untuk download laporan dalam format PDF dan Excel tanpa batas.
-            </p>
-            <button className="bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 transition-colors">
-              Upgrade Sekarang
-            </button>
-          </div>
-        </div>
-      </div>
+      <PremiumBanner
+        icon={<Lock className="w-6 h-6 text-amber-600" />}
+        title="Export PDF & Excel Tersedia di Premium"
+        description="Upgrade ke Premium untuk download laporan dalam format PDF dan Excel tanpa batas."
+        ctaLabel="Upgrade Sekarang"
+      />
 
       {/* Reports List */}
       <div className="space-y-4">
         {reports.map((report) => (
-          <div key={report.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+          <Card key={report.id}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -85,36 +76,35 @@ export function Reports() {
               </div>
 
               <div className="flex gap-2">
-                {/* Preview Button - Always Available */}
                 <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
                   Lihat
                 </button>
-
-                {/* Download PDF - Locked */}
                 <button
                   className="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed flex items-center gap-2"
                   disabled
+                  aria-disabled="true"
+                  title="Tersedia di paket Premium"
                 >
                   <Lock className="w-4 h-4" />
                   PDF
                 </button>
-
-                {/* Download Excel - Locked */}
                 <button
                   className="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed flex items-center gap-2"
                   disabled
+                  aria-disabled="true"
+                  title="Tersedia di paket Premium"
                 >
                   <Lock className="w-4 h-4" />
                   Excel
                 </button>
               </div>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
 
       {/* Report Types Info */}
-      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+      <Card>
         <h3 className="mb-4">Tipe Laporan yang Tersedia</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-blue-50 rounded-lg">
@@ -136,7 +126,7 @@ export function Reports() {
             </p>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
