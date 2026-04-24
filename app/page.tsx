@@ -1,13 +1,13 @@
 'use client'
 import { useState } from 'react';
 import { LayoutDashboard, Receipt, PlusCircle, Target, Sparkles, FileText, UserPlus } from 'lucide-react';
-import { Dashboard } from './Components/Dashboard';
-import { Transactions } from './Components/Transactions';
-import { AddTransaction } from './Components/AddTransaction';
-import { Budgeting } from './Components/Budgeting';
-import { AISuggestions } from './Components/AISuggestions';
-import { Reports } from './Components/Reports';
-import { Onboarding } from './Components/Onboarding';
+import { Dashboard } from './Components/dashboard/Dashboard';
+import { Transactions } from './Components/transactions/Transactions';
+import { AddTransaction } from './Components/transactions/AddTransaction';
+import { Budgeting } from './Components/budgeting/Budgeting';
+import { AISuggestions } from './Components/ai/AISuggestions';
+import { Reports } from './Components/reports/Reports';
+import { Onboarding } from './Components/onboarding/Onboarding';
 
 type Tab = 'dashboard' | 'transactions' | 'add-transaction' | 'budgeting' | 'ai-suggestions' | 'reports' | 'onboarding';
 
