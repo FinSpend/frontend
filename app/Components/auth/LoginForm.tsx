@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import type { LoginCredentials } from '@/app/types';
+import { login } from '@/app/services/userService';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -47,8 +48,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     try {
       // TODO: ganti dengan API call
       // const res = await api.post('/auth/login', credentials);
-      await new Promise((r) => setTimeout(r, 1200));
-
+      
+      const res = await login(credentials);
+      // await new Promise((r) => setTimeout(r, 1200));
+      console.log(res)
       onSuccess?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan, coba lagi');
