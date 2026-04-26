@@ -1,33 +1,32 @@
+// ─── Transaction ───────────────────────────────────────────────
 export type TransactionCategory =
   | 'Makanan'
   | 'Transport'
   | 'Belanja'
   | 'Hiburan'
-  | 'Pemasukan'
   | 'Tagihan'
   | 'Kesehatan'
-  | 'Lainnya';
+  | 'Lainnya'
+  | 'Pemasukan';
 
 export interface Transaction {
   id: number;
-  /** ISO date string, e.g. '2026-04-24' */
   date: string;
   name: string;
   category: TransactionCategory;
-  /** Positive = income, negative = expense */
   amount: number;
 }
 
 export interface Budget {
   id: number;
-  category: TransactionCategory;
+  category: string;
   spent: number;
   limit: number;
   icon: string;
 }
 
 export interface CategoryStat {
-  name: TransactionCategory;
+  name: string;
   value: number;
   color: string;
 }
@@ -38,17 +37,25 @@ export interface TrendPoint {
   expense: number;
 }
 
-export type FinancialGoalId =
-  | 'emergency'
-  | 'house'
-  | 'vacation'
-  | 'investment'
-  | 'retirement'
-  | 'debt';
+// ─── Auth ──────────────────────────────────────────────────────
+export type UserPlan = 'free' | 'premium';
 
-export interface FinancialGoal {
-  id: FinancialGoalId;
-  title: string;
-  icon: string;
-  description: string;
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  plan: UserPlan;
+  createdAt: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterCredentials {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
 }
