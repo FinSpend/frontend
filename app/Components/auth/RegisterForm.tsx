@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import type { RegisterCredentials } from '@/app/types';
+import { register } from '@/app/services/userService';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -88,7 +89,9 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
     try {
       // TODO: ganti dengan API call
       // const res = await api.post('/auth/register', { name: data.name, email: data.email, password: data.password });
-      await new Promise((r) => setTimeout(r, 1400));
+      const { confirmPassword, ...payload } = data;
+      const res = await register(payload);
+      console.log("SUCCESS:", res.data);
 
       onSuccess?.();
     } catch (err) {

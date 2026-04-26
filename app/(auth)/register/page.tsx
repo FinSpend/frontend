@@ -7,7 +7,7 @@ export default function RegisterPage() {
 
   return (
     <RegisterForm
-      onSuccess={() => router.push('/onboarding')}
+      onSuccess={() => router.push('/login')}
     />
   );
 }
