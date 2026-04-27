@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Receipt, Target, Sparkles, FileText, UserPlus, Menu, X } from 'lucide-react';
@@ -37,7 +38,7 @@ export function Sidebar() {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <span className="text-lg">FinSpend</span>
+        <Image src="/Logo_FinSpend.png" alt="FinSpend" width={150} height={50} className="object-contain" priority />
       </header>
 
       {/* Sidebar */}
@@ -47,8 +48,8 @@ export function Sidebar() {
         } md:translate-x-0`}
         aria-label="Navigasi utama"
       >
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-          <span className="text-2xl">FinSpend</span>
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          <Image src="/Logo_FinSpend.png" alt="FinSpend" width={150} height={50} className="object-contain" priority />
           <button
             onClick={() => setOpen(false)}
             className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"

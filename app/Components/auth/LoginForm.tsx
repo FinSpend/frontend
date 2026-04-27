@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import type { LoginCredentials } from '@/app/types';
@@ -70,8 +71,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     <div className="w-full max-w-md">
       {/* Logo & Heading */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-14 h-14 bg-[#0047AB] rounded-2xl mb-4 shadow-lg shadow-[#0047AB]/30">
-          <span className="text-white text-2xl">💸</span>
+        <div className="inline-flex items-center justify-center mb-4">
+          <Image src="/Logo_FinSpend.png" alt="FinSpend" width={220} height={220} priority />
         </div>
         <h1 className="text-2xl text-gray-900 mb-1">Selamat datang kembali</h1>
         <p className="text-sm text-gray-500">Masuk ke akun FinSpend Anda</p>
