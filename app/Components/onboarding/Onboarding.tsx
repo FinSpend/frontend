@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react';
-import { CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CheckCircle, Loader2 } from 'lucide-react';
 import { formatIDR } from '@/app/lib/format';
 import { Card } from '@/app/Components/ui/Card';
+import { upsertProfile, fetchProfile } from '@/app/services/userService';
 
 const steps = [
   { id: 1, title: 'Profil Keuangan' },
@@ -35,6 +36,8 @@ interface OnboardingProps {
 
 export function Onboarding({ onFinish }: OnboardingProps) {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     monthlyIncome: '',
     monthlyExpense: '',
@@ -43,6 +46,21 @@ export function Onboarding({ onFinish }: OnboardingProps) {
     profession: '',
     dependents: '0',
   });
+
+  useEffect(() => {
+    fetchProfile().then((res) => {
+      const p = res.data.data;
+      if (!p) return;
+      setFormData(prev => ({
+        ...prev,
+        monthlyIncome: p.monthlyIncome ? String(p.monthlyIncome) : '',
+        monthlyExpense: p.monthlyExpense ? String(p.monthlyExpense) : '',
+        currentSavings: p.currentSavings ? String(p.currentSavings) : '',
+        selectedGoals: Array.isArray(p.financialGoals) ? p.financialGoals : [],
+        profession: p.occupation || '',
+      }));
+    }).catch(() => {});
+  }, []);
 
   const handleGoalToggle = (goalId: string) => {
     setFormData({
@@ -53,11 +71,28 @@ export function Onboarding({ onFinish }: OnboardingProps) {
     });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
-    } else {
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    try {
+      await upsertProfile({
+        monthlyIncome: Number(formData.monthlyIncome) || 0,
+        monthlyExpense: Number(formData.monthlyExpense) || 0,
+        currentSavings: Number(formData.currentSavings) || 0,
+        incomeCurrency: 'IDR',
+        occupation: formData.profession,
+        financialGoals: formData.selectedGoals,
+      });
       onFinish?.();
+    } catch {
+      setError('Gagal menyimpan profil, coba lagi.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -254,13 +289,18 @@ export function Onboarding({ onFinish }: OnboardingProps) {
           </div>
         )}
 
+        {/* Error */}
+        {error && (
+          <p className="mt-4 text-sm text-red-600 text-center">{error}</p>
+        )}
+
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-8">
           <button
             onClick={handleBack}
-            disabled={currentStep === 1}
+            disabled={currentStep === 1 || isLoading}
             className={`px-6 py-3 rounded-lg transition-colors ${
-              currentStep === 1
+              currentStep === 1 || isLoading
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
@@ -269,9 +309,11 @@ export function Onboarding({ onFinish }: OnboardingProps) {
           </button>
           <button
             onClick={handleNext}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={isLoading}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            {currentStep === 3 ? 'Selesai' : 'Lanjut'}
+            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {currentStep === 3 ? (isLoading ? 'Menyimpan...' : 'Selesai') : 'Lanjut'}
           </button>
         </div>
       </Card>

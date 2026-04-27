@@ -1,146 +1,209 @@
-import { Sparkles, CheckCircle, Crown } from 'lucide-react';
-import { formatIDR } from '@/app/lib/format';
+'use client'
+import { useState, useEffect } from 'react';
+import { Sparkles, CheckCircle, Crown, RefreshCw, X } from 'lucide-react';
 import { Card } from '@/app/Components/ui/Card';
 import { PremiumBanner } from '@/app/Components/ui/PremiumBanner';
-
-const suggestions = [
-  {
-    id: 1,
-    title: 'Kurangi belanja online minggu ini',
-    description: 'Anda sudah melewati budget belanja 25%. Tunda pembelian non-esensial untuk menghemat Rp 300.000.',
-    impact: 'Rp 300.000',
-    priority: 'Tinggi',
-    category: 'Penghematan',
-  },
-  {
-    id: 2,
-    title: 'Alihkan ke transportasi umum',
-    description: 'Menggunakan KRL/MRT bisa menghemat Rp 200.000 per bulan dibanding Grab/Gojek setiap hari.',
-    impact: 'Rp 200.000',
-    priority: 'Sedang',
-    category: 'Transport',
-  },
-  {
-    id: 3,
-    title: 'Meal prep untuk hemat makan',
-    description: 'Masak untuk 3 hari sekaligus bisa mengurangi pengeluaran makan hingga 40%.',
-    impact: 'Rp 480.000',
-    priority: 'Sedang',
-    category: 'Makanan',
-  },
-];
-
-const appliedSuggestions = [
-  {
-    id: 1,
-    title: 'Batalkan langganan yang tidak terpakai',
-    savedAmount: 150000,
-    date: '15 Apr 2026',
-  },
-  {
-    id: 2,
-    title: 'Pindah paket internet ke yang lebih murah',
-    savedAmount: 100000,
-    date: '10 Apr 2026',
-  },
-];
+import { getAISuggestions, generateAISuggestion, updateAISuggestion } from '@/app/services/userService';
+import { useData } from '@/app/lib/data-context';
+import type { AiSuggestion } from '@/app/types';
 
 export function AISuggestions() {
-  const financialScore = 78;
+  const { transactions } = useData();
+  const [suggestions, setSuggestions] = useState<AiSuggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState('');
+  const [fetchKey, setFetchKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetch = async () => {
+      try {
+        const res = await getAISuggestions();
+        if (!cancelled) setSuggestions((res.data.data as AiSuggestion[]) || []);
+      } catch {
+        if (!cancelled) setError('Gagal memuat saran AI');
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    fetch();
+    return () => { cancelled = true; };
+  }, [fetchKey]);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setError('');
+    try {
+      await generateAISuggestion();
+      setFetchKey(k => k + 1);
+    } catch {
+      setError('Gagal membuat saran AI. Pastikan Anda memiliki data transaksi.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleApply = async (id: string) => {
+    try {
+      await updateAISuggestion(id, { isApplied: true, isRead: true });
+      setSuggestions(prev => prev.map(s => s.id === id ? { ...s, isApplied: true, isRead: true } : s));
+    } catch {
+      setError('Gagal menerapkan saran');
+    }
+  };
+
+  const handleDismiss = async (id: string) => {
+    try {
+      await updateAISuggestion(id, { isRead: true });
+      setSuggestions(prev => prev.map(s => s.id === id ? { ...s, isRead: true } : s));
+    } catch {
+      setError('Gagal mengabaikan saran');
+    }
+  };
+
+  // Compute financial score from real transactions
+  const totalIncome = transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+  const totalExpense = transactions.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+  const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
+  const financialScore = Math.min(100, Math.max(0, Math.round(savingsRate * 3)));
+
+  const scoreLabel =
+    financialScore >= 80 ? 'Sangat Baik' :
+    financialScore >= 60 ? 'Bagus' :
+    financialScore >= 40 ? 'Cukup' :
+    'Perlu Perbaikan';
+
+  const scoreColor =
+    financialScore >= 80 ? 'text-green-600' :
+    financialScore >= 60 ? 'text-blue-600' :
+    financialScore >= 40 ? 'text-yellow-600' :
+    'text-red-600';
+
+  const activeSuggestions = suggestions.filter(s => !s.isApplied);
+  const appliedSuggestions = suggestions.filter(s => s.isApplied);
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl">Saran AI</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl">Saran AI</h2>
+        <button
+          onClick={handleGenerate}
+          disabled={isGenerating}
+          className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-purple-700 disabled:opacity-50 transition-colors"
+        >
+          <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
+          {isGenerating ? 'Membuat...' : 'Minta Saran Baru'}
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm flex items-center justify-between">
+          {error}
+          <button onClick={() => setError('')}><X className="w-4 h-4" /></button>
+        </div>
+      )}
 
       {/* Financial Score */}
       <Card>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg mb-1">Skor Keuangan Anda</h3>
-            <p className="text-sm text-gray-600">Berdasarkan kebiasaan 30 hari terakhir</p>
+            <p className="text-sm text-gray-600">Berdasarkan data transaksi Anda</p>
           </div>
           <div className="text-right">
-            <div className="text-4xl text-purple-600">{financialScore}</div>
+            <div className={`text-4xl ${scoreColor}`}>{financialScore}</div>
             <p className="text-sm text-gray-600">/ 100</p>
           </div>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div
-            className="h-3 rounded-full bg-linear-to-r from-purple-500 to-pink-500"
+            className="h-3 rounded-full bg-linear-to-r from-purple-500 to-pink-500 transition-all"
             style={{ width: `${financialScore}%` }}
           />
         </div>
-        <p className="text-sm text-gray-600 mt-3">
-          Bagus! Tingkatkan skor dengan menerapkan saran di bawah.
+        <p className={`text-sm mt-3 ${scoreColor}`}>
+          {scoreLabel}.{' '}
+          {financialScore >= 60
+            ? 'Pertahankan kebiasaan baik ini!'
+            : 'Terapkan saran di bawah untuk meningkatkan skor Anda.'}
         </p>
       </Card>
 
-      {/* Priority Suggestions */}
+      {/* Active Suggestions */}
       <div>
         <h3 className="mb-4 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-purple-600" />
-          Saran Prioritas
+          Saran Aktif
         </h3>
-        <div className="space-y-4">
-          {suggestions.map((suggestion) => (
-            <Card key={suggestion.id}>
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <h4 className="mb-2">{suggestion.title}</h4>
-                  <p className="text-sm text-gray-600 mb-3">{suggestion.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                      Hemat {suggestion.impact}
-                    </span>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs ${
-                        suggestion.priority === 'Tinggi'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}
+        {isLoading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600" />
+          </div>
+        ) : activeSuggestions.length === 0 ? (
+          <Card>
+            <p className="text-center text-gray-400 py-8">
+              Belum ada saran aktif. Klik &quot;Minta Saran Baru&quot; untuk mendapatkan rekomendasi berdasarkan data keuangan Anda.
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {activeSuggestions.map((suggestion) => (
+              <Card key={suggestion.id}>
+                <p className="text-sm text-gray-700 mb-2">{suggestion.content}</p>
+                <p className="text-xs text-gray-400 mb-3">
+                  {new Date(suggestion.createdAt).toLocaleDateString('id-ID', {
+                    day: 'numeric', month: 'long', year: 'numeric',
+                  })}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleApply(suggestion.id)}
+                    className="flex-1 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                  >
+                    Terapkan
+                  </button>
+                  {!suggestion.isRead && (
+                    <button
+                      onClick={() => handleDismiss(suggestion.id)}
+                      className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                     >
-                      Prioritas {suggestion.priority}
-                    </span>
-                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-                      {suggestion.category}
-                    </span>
-                  </div>
+                      Abaikan
+                    </button>
+                  )}
                 </div>
-              </div>
-              <button className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                Terapkan Saran
-              </button>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Applied Suggestions History */}
-      <div>
-        <h3 className="mb-4 flex items-center gap-2">
-          <CheckCircle className="w-5 h-5 text-green-600" />
-          Saran yang Sudah Diterapkan
-        </h3>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-100">
-          {appliedSuggestions.map((suggestion) => (
-            <div key={suggestion.id} className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+      {appliedSuggestions.length > 0 && (
+        <div>
+          <h3 className="mb-4 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            Saran yang Sudah Diterapkan
+          </h3>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-100">
+            {appliedSuggestions.map((suggestion) => (
+              <div key={suggestion.id} className="p-4 flex items-start gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center shrink-0">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                 </div>
-                <div>
-                  <p className="text-sm">{suggestion.title}</p>
-                  <p className="text-xs text-gray-500">{suggestion.date}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm">{suggestion.content}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {new Date(suggestion.createdAt).toLocaleDateString('id-ID', {
+                      day: 'numeric', month: 'long', year: 'numeric',
+                    })}
+                  </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-green-600">+{formatIDR(suggestion.savedAmount)}</p>
-                <p className="text-xs text-gray-500">Hemat</p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <PremiumBanner
         icon={<Crown className="w-6 h-6 text-amber-600" />}

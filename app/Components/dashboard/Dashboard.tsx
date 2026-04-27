@@ -6,15 +6,36 @@ import { Card } from '@/app/Components/ui/Card';
 import { useData } from '@/app/lib/data-context';
 import type { TrendPoint } from '@/app/types';
 
-const trendData: TrendPoint[] = [
-  { month: 'Jan', income: 4500000, expense: 3200000 },
-  { month: 'Feb', income: 5200000, expense: 3800000 },
-  { month: 'Mar', income: 4800000, expense: 4100000 },
-  { month: 'Apr', income: 6000000, expense: 3500000 },
-];
+const computeTrend = (transactions: { date: string; amount: number }[]): TrendPoint[] => {
+  const map: Record<string, { income: number; expense: number }> = {};
+  transactions.forEach(t => {
+    const d = new Date(t.date);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (!map[key]) map[key] = { income: 0, expense: 0 };
+    if (t.amount > 0) map[key].income += t.amount;
+    else map[key].expense += Math.abs(t.amount);
+  });
+  return Object.entries(map)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-6)
+    .map(([key, val]) => ({
+      month: new Date(key + '-01').toLocaleString('id-ID', { month: 'short' }),
+      ...val,
+    }));
+};
+
+const GOAL_LABELS: Record<string, { label: string; icon: string }> = {
+  emergency:  { label: 'Dana Darurat',  icon: '🛡️' },
+  house:      { label: 'Beli Rumah',    icon: '🏠' },
+  vacation:   { label: 'Liburan',       icon: '✈️' },
+  investment: { label: 'Investasi',     icon: '📈' },
+  retirement: { label: 'Pensiun',       icon: '🌴' },
+  debt:       { label: 'Lunasi Hutang', icon: '💳' },
+};
 
 export function Dashboard() {
-  const { transactions, budgets, categoryData } = useData();
+  const { transactions, budgets, categoryData, profile } = useData();
+  const trendData = computeTrend(transactions);
 
   const recentTransactions = transactions.slice(0, 5);
   const budgetStatus = budgets.slice(0, 3);
@@ -176,6 +197,53 @@ export function Dashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Profil Keuangan dari Onboarding */}
+      {profile && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <h3 className="mb-4">Profil Keuangan</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Pemasukan Bulanan (Target)</span>
+                <span className="text-green-600">{formatIDR(profile.monthlyIncome)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Pengeluaran Bulanan (Estimasi)</span>
+                <span className="text-red-500">{formatIDR(profile.monthlyExpense)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Tabungan Saat Ini</span>
+                <span className="text-blue-600">{formatIDR(profile.currentSavings)}</span>
+              </div>
+              {profile.occupation && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Profesi</span>
+                  <span>{profile.occupation}</span>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          <Card>
+            <h3 className="mb-4">Tujuan Finansial</h3>
+            {profile.financialGoals.length === 0 ? (
+              <p className="text-sm text-gray-400">Belum ada tujuan finansial dipilih.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {profile.financialGoals.map((goal) => {
+                  const g = GOAL_LABELS[goal] ?? { label: goal, icon: '🎯' };
+                  return (
+                    <span key={goal} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm">
+                      {g.icon} {g.label}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

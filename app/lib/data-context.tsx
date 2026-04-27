@@ -1,75 +1,155 @@
 'use client'
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import type { Transaction, Budget, CategoryStat } from '@/app/types';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import type { Transaction, Budget, CategoryStat, Category, UserProfile } from '@/app/types';
+import api from '@/app/services/api';
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Makanan: '#3b82f6',
-  Transport: '#10b981',
-  Belanja: '#f59e0b',
-  Hiburan: '#ef4444',
-  Lainnya: '#8b5cf6',
+  'Makan & minum': '#3b82f6',
+  'Transport': '#10b981',
+  'Belanja': '#f59e0b',
+  'Hiburan': '#ef4444',
+  'Tagihan': '#888780',
+  'Kesehatan': '#D4537E',
+  'Pendidikan': '#378ADD',
+  'Gaji': '#1D9E75',
+  'Freelance': '#378ADD',
+  'Investasi': '#639922',
+  'Lainnya': '#8b5cf6',
 };
 
-const initialTransactions: Transaction[] = [
-  { id: 1, date: '2026-04-24', name: 'Alfamart', category: 'Makanan', amount: -45000 },
-  { id: 2, date: '2026-04-24', name: 'Gaji Bulanan', category: 'Pemasukan', amount: 6000000 },
-  { id: 3, date: '2026-04-23', name: 'Grab', category: 'Transport', amount: -35000 },
-  { id: 4, date: '2026-04-23', name: 'Netflix', category: 'Hiburan', amount: -186000 },
-  { id: 5, date: '2026-04-22', name: 'Tokopedia', category: 'Belanja', amount: -250000 },
-  { id: 6, date: '2026-04-22', name: 'Indomaret', category: 'Makanan', amount: -65000 },
-  { id: 7, date: '2026-04-21', name: 'Gojek', category: 'Transport', amount: -42000 },
-  { id: 8, date: '2026-04-21', name: 'Shopee', category: 'Belanja', amount: -180000 },
-];
+interface RawTransaction {
+  id: string;
+  type: 'income' | 'expense';
+  amount: string | number;
+  description?: string;
+  transactionDate?: string;
+  category?: { name?: string; color?: string; icon?: string };
+}
 
-const initialBudgets: Budget[] = [
-  { id: 1, category: 'Makanan', spent: 1200000, limit: 1500000, icon: '🍔' },
-  { id: 2, category: 'Transport', spent: 800000, limit: 1000000, icon: '🚗' },
-  { id: 3, category: 'Belanja', spent: 1500000, limit: 1200000, icon: '🛍️' },
-  { id: 4, category: 'Hiburan', spent: 600000, limit: 800000, icon: '🎬' },
-  { id: 5, category: 'Tagihan', spent: 450000, limit: 500000, icon: '💳' },
-  { id: 6, category: 'Kesehatan', spent: 200000, limit: 500000, icon: '🏥' },
-];
+interface RawBudget {
+  id: string;
+  limitAmount: string | number;
+  spent: number;
+  category?: { name?: string; icon?: string };
+}
 
-const initialCategoryData: CategoryStat[] = [
-  { name: 'Makanan', value: 1200000, color: '#3b82f6' },
-  { name: 'Transport', value: 800000, color: '#10b981' },
-  { name: 'Belanja', value: 1500000, color: '#f59e0b' },
-  { name: 'Hiburan', value: 600000, color: '#ef4444' },
-  { name: 'Lainnya', value: 400000, color: '#8b5cf6' },
-];
+const mapTransaction = (t: RawTransaction): Transaction => ({
+  id: t.id,
+  date: (t.transactionDate || '').split('T')[0],
+  name: t.description || '',
+  category: t.category?.name || '',
+  amount: t.type === 'expense' ? -Number(t.amount) : Number(t.amount),
+});
+
+const mapBudget = (b: RawBudget): Budget => ({
+  id: b.id,
+  category: b.category?.name || '',
+  spent: b.spent,
+  limit: Number(b.limitAmount),
+  icon: b.category?.icon || '💰',
+});
+
+const computeCategoryData = (transactions: Transaction[], categories: Category[]): CategoryStat[] => {
+  const grouped = transactions
+    .filter(t => t.amount < 0)
+    .reduce((acc, t) => {
+      acc[t.category] = (acc[t.category] || 0) + Math.abs(t.amount);
+      return acc;
+    }, {} as Record<string, number>);
+
+  return Object.entries(grouped).map(([name, value]) => {
+    const cat = categories.find(c => c.name === name);
+    return { name, value, color: cat?.color || CATEGORY_COLORS[name] || '#8b5cf6' };
+  });
+};
 
 interface DataContextValue {
   transactions: Transaction[];
   budgets: Budget[];
   categoryData: CategoryStat[];
-  addTransaction: (t: Omit<Transaction, 'id'>) => void;
+  categories: Category[];
+  profile: UserProfile | null;
+  isLoading: boolean;
+  addTransaction: (t: { name: string; amount: number; category: string; date: string }) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  createBudget: (data: { categoryId: string; limitAmount: number; period: string; startDate: string }) => Promise<void>;
+  deleteBudget: (id: string) => Promise<void>;
+  refetch: () => void;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
-  const [budgets, setBudgets] = useState<Budget[]>(initialBudgets);
-  const [categoryData] = useState<CategoryStat[]>(initialCategoryData);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => {
-    const newId = Math.max(...transactions.map((tx) => tx.id)) + 1;
-    setTransactions((prev) => [{ ...t, id: newId }, ...prev]);
+  const categoryData = computeCategoryData(transactions, categories);
 
-    // Update budget spent if it's an expense with a matching category
-    if (t.amount < 0) {
-      setBudgets((prev) =>
-        prev.map((b) =>
-          b.category === t.category
-            ? { ...b, spent: b.spent + Math.abs(t.amount) }
-            : b
-        )
-      );
-    }
-  }, [transactions]);
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [txRes, budgetRes, catRes, profileRes] = await Promise.all([
+          api.get('/api/transactions'),
+          api.get('/api/budgets'),
+          api.get('/api/categories'),
+          api.get('/api/profile'),
+        ]);
+        if (cancelled) return;
+        setTransactions((txRes.data.data as RawTransaction[] || []).map(mapTransaction));
+        setBudgets((budgetRes.data.data as RawBudget[] || []).map(mapBudget));
+        setCategories((catRes.data.data as Category[]) || []);
+        setProfile((profileRes.data.data as UserProfile) || null);
+      } catch {
+        // user belum login atau tidak ada data
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
+  const refetch = useCallback(() => setRefreshKey(k => k + 1), []);
+
+  const addTransaction = useCallback(async (t: { name: string; amount: number; category: string; date: string }) => {
+    const cat = categories.find(c => c.name === t.category);
+    if (!cat) throw new Error('Kategori tidak ditemukan');
+
+    await api.post('/api/transactions', {
+      categoryId: cat.id,
+      type: t.amount < 0 ? 'expense' : 'income',
+      amount: Math.abs(t.amount),
+      description: t.name,
+      transactionDate: t.date,
+    });
+
+    setRefreshKey(k => k + 1);
+  }, [categories]);
+
+  const deleteTransaction = useCallback(async (id: string) => {
+    await api.delete(`/api/transactions/${id}`);
+    setRefreshKey(k => k + 1);
+  }, []);
+
+  const createBudget = useCallback(async (data: { categoryId: string; limitAmount: number; period: string; startDate: string }) => {
+    await api.post('/api/budgets', data);
+    setRefreshKey(k => k + 1);
+  }, []);
+
+  const deleteBudget = useCallback(async (id: string) => {
+    await api.delete(`/api/budgets/${id}`);
+    setRefreshKey(k => k + 1);
+  }, []);
 
   return (
-    <DataContext.Provider value={{ transactions, budgets, categoryData, addTransaction }}>
+    <DataContext.Provider value={{ transactions, budgets, categoryData, categories, profile, isLoading, addTransaction, deleteTransaction, createBudget, deleteBudget, refetch }}>
       {children}
     </DataContext.Provider>
   );

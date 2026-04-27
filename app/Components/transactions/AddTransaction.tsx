@@ -1,9 +1,8 @@
 'use client'
 import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Card } from '@/app/Components/ui/Card';
 import { useData } from '@/app/lib/data-context';
-import type { TransactionCategory } from '@/app/types';
 
 interface AddTransactionProps {
   onBack: () => void;
@@ -11,36 +10,43 @@ interface AddTransactionProps {
 }
 
 export function AddTransaction({ onBack, onSuccess }: AddTransactionProps) {
-  const { addTransaction } = useData();
+  const { addTransaction, categories } = useData();
   const [type, setType] = useState<'income' | 'expense'>('expense');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
     category: '',
     date: new Date().toISOString().split('T')[0],
-    notes: '',
   });
 
-  const expenseCategories: TransactionCategory[] = ['Makanan', 'Transport', 'Belanja', 'Hiburan', 'Tagihan', 'Kesehatan', 'Lainnya'];
-  const incomeCategories: TransactionCategory[] = ['Pemasukan'];
+  const filteredCategories = categories.filter(c => c.type === type);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const rawAmount = Number(formData.amount);
-    const amount = type === 'expense' ? -rawAmount : rawAmount;
-    addTransaction({
-      name: formData.name,
-      amount,
-      category: formData.category as TransactionCategory,
-      date: formData.date,
-    });
-    onSuccess?.('Transaksi berhasil ditambahkan!');
-    onBack();
+    setError('');
+    setIsLoading(true);
+    try {
+      const rawAmount = Number(formData.amount);
+      const amount = type === 'expense' ? -rawAmount : rawAmount;
+      await addTransaction({
+        name: formData.name,
+        amount,
+        category: formData.category,
+        date: formData.date,
+      });
+      onSuccess?.('Transaksi berhasil ditambahkan!');
+      onBack();
+    } catch {
+      setError('Gagal menyimpan transaksi, coba lagi.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <button
           onClick={onBack}
@@ -54,30 +60,18 @@ export function AddTransaction({ onBack, onSuccess }: AddTransactionProps) {
 
       <Card>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && <p className="text-sm text-red-600">{error}</p>}
+
           {/* Type Toggle */}
           <div>
             <label className="block text-sm mb-2">Tipe Transaksi</label>
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setType('expense')}
-                className={`flex-1 py-3 rounded-lg transition-colors ${
-                  type === 'expense'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
+              <button type="button" onClick={() => { setType('expense'); setFormData(f => ({ ...f, category: '' })); }}
+                className={`flex-1 py-3 rounded-lg transition-colors ${type === 'expense' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                 Pengeluaran
               </button>
-              <button
-                type="button"
-                onClick={() => setType('income')}
-                className={`flex-1 py-3 rounded-lg transition-colors ${
-                  type === 'income'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
+              <button type="button" onClick={() => { setType('income'); setFormData(f => ({ ...f, category: '' })); }}
+                className={`flex-1 py-3 rounded-lg transition-colors ${type === 'income' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                 Pemasukan
               </button>
             </div>
@@ -85,100 +79,52 @@ export function AddTransaction({ onBack, onSuccess }: AddTransactionProps) {
 
           {/* Amount */}
           <div>
-            <label htmlFor="amount" className="block text-sm mb-2">
-              Jumlah
-            </label>
+            <label htmlFor="amount" className="block text-sm mb-2">Jumlah</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
-              <input
-                type="number"
-                id="amount"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              <input type="number" id="amount" value={formData.amount}
+                onChange={(e) => setFormData(f => ({ ...f, amount: e.target.value }))}
                 className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="0"
-                required
-              />
+                placeholder="0" required />
             </div>
           </div>
 
           {/* Name */}
           <div>
-            <label htmlFor="name" className="block text-sm mb-2">
-              Nama Transaksi
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            <label htmlFor="name" className="block text-sm mb-2">Nama Transaksi</label>
+            <input type="text" id="name" value={formData.name}
+              onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Contoh: Belanja bulanan"
-              required
-            />
+              placeholder="Contoh: Belanja bulanan" required />
           </div>
 
           {/* Category */}
           <div>
-            <label htmlFor="category" className="block text-sm mb-2">
-              Kategori
-            </label>
-            <select
-              id="category"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            <label htmlFor="category" className="block text-sm mb-2">Kategori</label>
+            <select id="category" value={formData.category}
+              onChange={(e) => setFormData(f => ({ ...f, category: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
+              required>
               <option value="">Pilih kategori</option>
-              {(type === 'expense' ? expenseCategories : incomeCategories).map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
+              {filteredCategories.map((cat) => (
+                <option key={cat.id} value={cat.name}>{cat.icon} {cat.name}</option>
               ))}
             </select>
           </div>
 
           {/* Date */}
           <div>
-            <label htmlFor="date" className="block text-sm mb-2">
-              Tanggal
-            </label>
-            <input
-              type="date"
-              id="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            <label htmlFor="date" className="block text-sm mb-2">Tanggal</label>
+            <input type="date" id="date" value={formData.date}
+              onChange={(e) => setFormData(f => ({ ...f, date: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+              required />
           </div>
 
-          {/* Notes */}
-          <div>
-            <label htmlFor="notes" className="block text-sm mb-2">
-              Catatan (Opsional)
-            </label>
-            <textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={3}
-              placeholder="Tambahkan catatan..."
-            />
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className={`w-full py-3 rounded-lg text-white transition-colors ${
-              type === 'expense'
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-green-600 hover:bg-green-700'
-            }`}
-          >
-            Simpan Transaksi
+          <button type="submit" disabled={isLoading}
+            className={`w-full py-3 rounded-lg text-white transition-colors disabled:opacity-60 flex items-center justify-center gap-2 ${type === 'expense' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}>
+            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isLoading ? 'Menyimpan...' : 'Simpan Transaksi'}
           </button>
         </form>
       </Card>
