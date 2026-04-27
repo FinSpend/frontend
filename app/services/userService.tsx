@@ -8,3 +8,7 @@ export const login = (data:any) => {
 };
 // export const getUsers = () => api.get("/auth/register");
 export const getProfile = () => api.get("/auth/me");
+
+export const logout = () => {
+  return api.post("/auth/logout");
+};
