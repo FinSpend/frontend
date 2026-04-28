@@ -1,26 +1,42 @@
 'use client'
-import { useState } from 'react';
-import { Plus, Filter, Trash2, Pencil, X, Check } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Filter, Search, Trash2, Pencil, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatIDRSigned } from '@/app/lib/format';
 import { Card } from '@/app/Components/ui/Card';
+import { Skeleton } from '@/app/Components/ui/Skeleton';
 import { useData } from '@/app/lib/data-context';
+import { useToast } from '@/app/Components/ui/ToastProvider';
 import { updateTransaction } from '@/app/services/userService';
 import type { Transaction } from '@/app/types';
 
+const PAGE_SIZE = 15;
+
 export function Transactions() {
   const { transactions, isLoading, deleteTransaction, refetch } = useData();
+  const { showToast } = useToast();
+
   const [selectedCategory, setSelectedCategory] = useState('Semua');
+  const [search, setSearch] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [page, setPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', amount: '' });
-  const [error, setError] = useState('');
 
   const filterCategories = ['Semua', ...Array.from(new Set(transactions.map(t => t.category))).filter(Boolean)];
 
-  const filtered = selectedCategory === 'Semua'
-    ? transactions
-    : transactions.filter(t => t.category === selectedCategory);
+  const filtered = useMemo(() => {
+    return transactions
+      .filter(t => selectedCategory === 'Semua' || t.category === selectedCategory)
+      .filter(t => !search || t.name.toLowerCase().includes(search.toLowerCase()))
+      .filter(t => !startDate || t.date >= startDate)
+      .filter(t => !endDate || t.date <= endDate);
+  }, [transactions, selectedCategory, search, startDate, endDate]);
 
-  const groupedByDate = filtered.reduce((acc, t) => {
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const groupedByDate = paged.reduce((acc, t) => {
     const date = new Date(t.date).toLocaleDateString('id-ID', {
       day: 'numeric', month: 'long', year: 'numeric',
     });
@@ -29,12 +45,15 @@ export function Transactions() {
     return acc;
   }, {} as Record<string, Transaction[]>);
 
+  const resetPage = () => setPage(1);
+
   const handleDelete = async (id: string) => {
     if (!confirm('Hapus transaksi ini?')) return;
     try {
       await deleteTransaction(id);
+      showToast('Transaksi berhasil dihapus');
     } catch {
-      setError('Gagal menghapus transaksi');
+      showToast('Gagal menghapus transaksi', 'error');
     }
   };
 
@@ -51,21 +70,30 @@ export function Transactions() {
       });
       setEditingId(null);
       refetch();
+      showToast('Transaksi berhasil diperbarui');
     } catch {
-      setError('Gagal memperbarui transaksi');
+      showToast('Gagal memperbarui transaksi', 'error');
     }
   };
 
   if (isLoading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-10 w-40" />
+      </div>
+      <Skeleton className="h-28 rounded-xl" />
+      <Skeleton className="h-20 rounded-xl" />
+      {[...Array(5)].map((_, i) => (
+        <Skeleton key={i} className="h-16 rounded-lg" />
+      ))}
     </div>
   );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl">Transaksi</h2>
+        <h2 className="text-2xl dark:text-white">Transaksi</h2>
         <a
           href="/transactions/new"
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
@@ -75,29 +103,61 @@ export function Transactions() {
         </a>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm flex items-center justify-between">
-          {error}
-          <button onClick={() => setError('')}><X className="w-4 h-4" /></button>
+      {/* Search + Date Filter */}
+      <Card className="p-4!">
+        <div className="flex flex-col gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => { setSearch(e.target.value); resetPage(); }}
+              placeholder="Cari transaksi..."
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="date"
+              value={startDate}
+              onChange={e => { setStartDate(e.target.value); resetPage(); }}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+            />
+            <span className="text-gray-400 text-sm">–</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={e => { setEndDate(e.target.value); resetPage(); }}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+            />
+            {(search || startDate || endDate) && (
+              <button
+                onClick={() => { setSearch(''); setStartDate(''); setEndDate(''); resetPage(); }}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                Reset filter
+              </button>
+            )}
+          </div>
         </div>
-      )}
+      </Card>
 
       {/* Category Filter */}
       <Card className="p-4!">
         <div className="flex items-center gap-2 mb-3">
-          <Filter className="w-5 h-5 text-gray-600" />
-          <span className="text-sm">Filter Kategori</span>
+          <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <span className="text-sm dark:text-gray-300">Filter Kategori</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {filterCategories.map((cat) => (
             <button
               key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              onClick={() => { setSelectedCategory(cat); resetPage(); }}
               aria-pressed={selectedCategory === cat}
               className={`px-4 py-2 rounded-lg text-sm transition-colors ${
                 selectedCategory === cat
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
               }`}
             >
               {cat}
@@ -106,74 +166,64 @@ export function Transactions() {
         </div>
       </Card>
 
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        Menampilkan {paged.length} dari {filtered.length} transaksi
+      </p>
+
       {/* Transactions List */}
-      {filtered.length === 0 ? (
+      {paged.length === 0 ? (
         <Card>
           <p className="text-center text-gray-400 py-10">
-            {transactions.length === 0 ? 'Belum ada transaksi. Tambahkan transaksi pertama Anda.' : 'Tidak ada transaksi untuk kategori ini.'}
+            {transactions.length === 0
+              ? 'Belum ada transaksi. Tambahkan transaksi pertama Anda.'
+              : 'Tidak ada transaksi yang cocok dengan filter.'}
           </p>
         </Card>
       ) : (
         <div className="space-y-6">
           {Object.entries(groupedByDate).map(([date, dateTransactions]) => (
             <div key={date}>
-              <h3 className="text-sm text-gray-500 mb-3">{date}</h3>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-100">
+              <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-3">{date}</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
                 {dateTransactions.map((transaction) => (
-                  <div key={transaction.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div key={transaction.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     {editingId === transaction.id ? (
                       <div className="flex items-center gap-3">
                         <input
-                          className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                           value={editForm.name}
                           onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
                           placeholder="Deskripsi"
                         />
                         <input
-                          className="w-32 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-32 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                           type="number"
                           value={editForm.amount}
                           onChange={e => setEditForm(f => ({ ...f, amount: e.target.value }))}
                           placeholder="Jumlah"
                         />
-                        <button
-                          onClick={() => handleEditSubmit(transaction)}
-                          className="text-green-600 hover:text-green-700"
-                          title="Simpan"
-                        >
+                        <button onClick={() => handleEditSubmit(transaction)} className="text-green-600 hover:text-green-700" title="Simpan">
                           <Check className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => setEditingId(null)}
-                          className="text-gray-400 hover:text-gray-600"
-                          title="Batal"
-                        >
+                        <button onClick={() => setEditingId(null)} className="text-gray-400 hover:text-gray-600" title="Batal">
                           <X className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm">{transaction.name}</p>
-                          <p className="text-xs text-gray-500 mt-1">{transaction.category}</p>
+                          <p className="text-sm dark:text-white">{transaction.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{transaction.category}</p>
                         </div>
                         <div className="flex items-center gap-3">
                           <p className={`text-sm ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {formatIDRSigned(transaction.amount)}
                           </p>
                           <p className="text-xs text-gray-400">{transaction.date}</p>
-                          <button
-                            onClick={() => startEdit(transaction)}
-                            className="text-gray-400 hover:text-blue-600 transition-colors"
-                            title="Edit"
-                          >
+                          <button onClick={() => startEdit(transaction)} className="text-gray-400 hover:text-blue-600 transition-colors" title="Edit">
                             <Pencil className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleDelete(transaction.id)}
-                            className="text-gray-400 hover:text-red-600 transition-colors"
-                            title="Hapus"
-                          >
+                          <button onClick={() => handleDelete(transaction.id)} className="text-gray-400 hover:text-red-600 transition-colors" title="Hapus">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -184,6 +234,39 @@ export function Transactions() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700"
+          >
+            <ChevronLeft className="w-4 h-4 dark:text-gray-300" />
+          </button>
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i + 1}
+              onClick={() => setPage(i + 1)}
+              className={`w-9 h-9 rounded-lg text-sm transition-colors ${
+                page === i + 1
+                  ? 'bg-blue-600 text-white'
+                  : 'border border-gray-200 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-gray-300'
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700"
+          >
+            <ChevronRight className="w-4 h-4 dark:text-gray-300" />
+          </button>
         </div>
       )}
     </div>

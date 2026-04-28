@@ -1,0 +1,19 @@
+{
+  "name": "FinSpend - Manajemen Keuangan",
+  "short_name": "FinSpend",
+  "description": "Aplikasi manajemen keuangan pribadi",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#534AB7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/Logo_FinSpend.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["finance", "productivity"]
+}

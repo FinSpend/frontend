@@ -1,6 +1,6 @@
 'use client'
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import type { Transaction, Budget, CategoryStat, Category, UserProfile } from '@/app/types';
+import type { Transaction, Budget, CategoryStat, Category, UserProfile, AuthUser } from '@/app/types';
 import api from '@/app/services/api';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -69,6 +69,7 @@ interface DataContextValue {
   categoryData: CategoryStat[];
   categories: Category[];
   profile: UserProfile | null;
+  user: AuthUser | null;
   isLoading: boolean;
   addTransaction: (t: { name: string; amount: number; category: string; date: string }) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
@@ -84,6 +85,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -94,17 +96,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const load = async () => {
       try {
-        const [txRes, budgetRes, catRes, profileRes] = await Promise.all([
+        const [txRes, budgetRes, catRes, profileRes, userRes] = await Promise.all([
           api.get('/api/transactions'),
           api.get('/api/budgets'),
           api.get('/api/categories'),
           api.get('/api/profile'),
+          api.get('/auth/me'),
         ]);
         if (cancelled) return;
         setTransactions((txRes.data.data as RawTransaction[] || []).map(mapTransaction));
         setBudgets((budgetRes.data.data as RawBudget[] || []).map(mapBudget));
         setCategories((catRes.data.data as Category[]) || []);
         setProfile((profileRes.data.data as UserProfile) || null);
+        setUser((userRes.data.data as AuthUser) || null);
       } catch {
         // user belum login atau tidak ada data
       } finally {
@@ -149,7 +153,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <DataContext.Provider value={{ transactions, budgets, categoryData, categories, profile, isLoading, addTransaction, deleteTransaction, createBudget, deleteBudget, refetch }}>
+    <DataContext.Provider value={{ transactions, budgets, categoryData, categories, profile, user, isLoading, addTransaction, deleteTransaction, createBudget, deleteBudget, refetch }}>
       {children}
     </DataContext.Provider>
   );

@@ -3,6 +3,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
   Receipt,
@@ -12,6 +13,8 @@ import {
   UserPlus,
   Menu,
   X,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { logout } from "../services/userService";
 
@@ -28,9 +31,10 @@ export function Sidebar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+
   const handleLogout = async () => {
     if (!confirm("Apakah Anda yakin ingin keluar?")) return;
-
     try {
       await logout();
     } catch {
@@ -53,13 +57,13 @@ export function Sidebar() {
       )}
 
       {/* Mobile header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 z-20">
+      <header className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3 z-20">
         <button
           onClick={() => setOpen(true)}
-          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100"
+          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
           aria-label="Buka menu navigasi"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-5 h-5 dark:text-white" />
         </button>
         <Image
           src="/Logo_FinSpend.png"
@@ -73,12 +77,12 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`w-64 bg-white border-r border-gray-200 fixed left-0 top-0 bottom-0 flex flex-col z-40 transition-transform duration-300 ease-in-out ${
+        className={`w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 fixed left-0 top-0 bottom-0 flex flex-col z-40 transition-transform duration-300 ease-in-out ${
           open ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0`}
         aria-label="Navigasi utama"
       >
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <Image
             src="/Logo_FinSpend.png"
             alt="FinSpend"
@@ -89,10 +93,10 @@ export function Sidebar() {
           />
           <button
             onClick={() => setOpen(false)}
-            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
             aria-label="Tutup menu"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 dark:text-white" />
           </button>
         </div>
 
@@ -111,7 +115,7 @@ export function Sidebar() {
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
                       ? "bg-blue-600 text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -122,25 +126,36 @@ export function Sidebar() {
           </div>
         </nav>
 
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {/* Mobile only: dark mode + logout */}
+        <div className="md:hidden p-4 border-t border-gray-200 dark:border-gray-700 space-y-1">
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            aria-label="Toggle dark mode"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-            />
-          </svg>
-          <span className="text-sm">Logout</span>
-        </button>
+            {theme === 'dark' ? (
+              <Sun className="w-5 h-5" />
+            ) : (
+              <Moon className="w-5 h-5" />
+            )}
+            <span className="text-sm">{theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}</span>
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
+            <span className="text-sm">Logout</span>
+          </button>
+        </div>
       </aside>
     </>
   );

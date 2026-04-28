@@ -13,24 +13,24 @@ interface PremiumBannerProps {
 
 export function PremiumBanner({ icon, title, badge, description, features, ctaLabel, onCtaClick }: PremiumBannerProps) {
   return (
-    <div className="bg-linear-to-r from-amber-50 to-yellow-50 rounded-lg p-6 border-2 border-amber-200">
+    <div className="bg-linear-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-lg p-6 border-2 border-amber-200 dark:border-amber-800">
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+        <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center shrink-0">
           {icon}
         </div>
         <div className="flex-1">
-          <h3 className="text-lg mb-2 flex items-center gap-2">
+          <h3 className="text-lg mb-2 flex items-center gap-2 dark:text-white">
             {title}
             {badge && (
-              <span className="px-2 py-1 bg-amber-200 text-amber-800 rounded text-xs">{badge}</span>
+              <span className="px-2 py-1 bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded text-xs">{badge}</span>
             )}
           </h3>
-          <p className="text-sm text-gray-700 mb-4">{description}</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">{description}</p>
           {features && features.length > 0 && (
             <ul className="space-y-2 mb-4">
               {features.map((f) => (
-                <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                  <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                <li key={f} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
                   {f}
                 </li>
               ))}
