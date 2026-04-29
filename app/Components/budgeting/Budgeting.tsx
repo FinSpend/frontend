@@ -52,7 +52,7 @@ export function Budgeting() {
     }
   };
 
-  const handleSubmit = async (e: React.SyntheticEvent) => {
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     if (!formData.categoryId || !formData.limitAmount) {
       setFormError('Semua field wajib diisi');

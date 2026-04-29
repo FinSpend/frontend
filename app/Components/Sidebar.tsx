@@ -17,6 +17,7 @@ import {
   Moon,
 } from "lucide-react";
 import { logout } from "../services/userService";
+import { useData } from "@/app/lib/data-context";
 
 const tabs = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -32,6 +33,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { clearAll } = useData();
 
   const handleLogout = async () => {
     if (!confirm("Apakah Anda yakin ingin keluar?")) return;
@@ -40,8 +42,8 @@ export function Sidebar() {
     } catch {
       // tetap logout meski API gagal
     } finally {
+      clearAll();
       router.push("/login");
-      router.refresh();
     }
   };
 

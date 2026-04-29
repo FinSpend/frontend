@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes';
 import { Sun, Moon, LogOut, User, ChevronDown, Crown, Settings } from 'lucide-react';
 import { useData } from '@/app/lib/data-context';
 import { logout } from '@/app/services/userService';
+import { UpgradeModal } from '@/app/Components/ui/UpgradeModal';
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -14,6 +15,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/ai-suggestions': 'Saran AI',
   '/reports': 'Laporan',
   '/onboarding': 'Onboarding',
+  '/profile': 'Profil Saya',
+  '/settings': 'Pengaturan Profil',
 };
 
 function getInitials(name: string): string {
@@ -36,11 +39,12 @@ function getAvatarColor(name: string): string {
 }
 
 export function TopBar() {
-  const { user } = useData();
+  const { user, clearAll } = useData();
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const pageTitle = PAGE_TITLES[pathname] ?? 'FinSpend';
@@ -59,8 +63,8 @@ export function TopBar() {
     setOpen(false);
     if (!confirm('Apakah Anda yakin ingin keluar?')) return;
     try { await logout(); } catch { /* tetap logout */ }
+    clearAll();
     router.push('/login');
-    router.refresh();
   };
 
   const initials = user ? getInitials(user.name) : '?';
@@ -68,6 +72,7 @@ export function TopBar() {
   const isPremium = user?.plan === 'premium';
 
   return (
+    <>
     <header className="hidden md:flex items-center justify-between px-8 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
       {/* Page Title */}
       <div>
@@ -101,7 +106,7 @@ export function TopBar() {
 
             {/* Name + Plan */}
             <div className="text-left leading-tight">
-              <p className="text-sm text-gray-800 dark:text-gray-200 max-w-[120px] truncate">
+              <p className="text-sm text-gray-800 dark:text-gray-200 max-w-30 truncate">
                 {user?.name ?? 'Memuat...'}
               </p>
               <p className={`text-xs flex items-center gap-1 ${isPremium ? 'text-amber-500' : 'text-gray-400'}`}>
@@ -135,7 +140,12 @@ export function TopBar() {
                 ) : (
                   <div className="mt-2 flex items-center justify-between px-2 py-1 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <span className="text-xs text-gray-500 dark:text-gray-400">Paket Free</span>
-                    <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Upgrade</button>
+                    <button
+                      onClick={() => { setOpen(false); setShowUpgrade(true); }}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Upgrade
+                    </button>
                   </div>
                 )}
               </div>
@@ -150,7 +160,7 @@ export function TopBar() {
                   Profil Saya
                 </button>
                 <button
-                  onClick={() => { setOpen(false); router.push('/onboarding'); }}
+                  onClick={() => { setOpen(false); router.push('/settings'); }}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <Settings className="w-4 h-4 text-gray-400" />
@@ -172,5 +182,8 @@ export function TopBar() {
         </div>
       </div>
     </header>
+
+    {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
+  </>
   );
 }

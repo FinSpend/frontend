@@ -41,6 +41,11 @@ export const getAISuggestions = () => api.get("/api/ai/suggestions");
 export const updateAISuggestion = (id: string, data: { isRead?: boolean; isApplied?: boolean }) =>
   api.patch(`/api/ai/suggestions/${id}`, data);
 
+// Account
+export const changePassword = (data: { currentPassword: string; newPassword: string }) =>
+  api.put('/auth/password', data);
+export const deleteAccount = () => api.delete('/auth/me');
+
 // Reports
 export const getReports = () => api.get("/api/reports");
 export const createReport = (data: {

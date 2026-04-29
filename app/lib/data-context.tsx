@@ -71,11 +71,13 @@ interface DataContextValue {
   profile: UserProfile | null;
   user: AuthUser | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
   addTransaction: (t: { name: string; amount: number; category: string; date: string }) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   createBudget: (data: { categoryId: string; limitAmount: number; period: string; startDate: string }) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
   refetch: () => void;
+  clearAll: () => void;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -87,6 +89,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const categoryData = computeCategoryData(transactions, categories);
@@ -96,21 +99,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const load = async () => {
       try {
-        const [txRes, budgetRes, catRes, profileRes, userRes] = await Promise.all([
+        // Verify auth first — if this throws 401, interceptor redirects to /login
+        const userRes = await api.get('/auth/me');
+        if (cancelled) return;
+
+        setUser(userRes.data.data as AuthUser);
+        setIsAuthenticated(true);
+
+        // Fetch remaining data in parallel; profile may not exist yet (catch → null)
+        const [txRes, budgetRes, catRes, profileRes] = await Promise.all([
           api.get('/api/transactions'),
           api.get('/api/budgets'),
           api.get('/api/categories'),
-          api.get('/api/profile'),
-          api.get('/auth/me'),
+          api.get('/api/profile').catch(() => ({ data: { data: null } })),
         ]);
+
         if (cancelled) return;
         setTransactions((txRes.data.data as RawTransaction[] || []).map(mapTransaction));
         setBudgets((budgetRes.data.data as RawBudget[] || []).map(mapBudget));
         setCategories((catRes.data.data as Category[]) || []);
         setProfile((profileRes.data.data as UserProfile) || null);
-        setUser((userRes.data.data as AuthUser) || null);
       } catch {
-        // user belum login atau tidak ada data
+        if (!cancelled) {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -121,6 +134,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [refreshKey]);
 
   const refetch = useCallback(() => setRefreshKey(k => k + 1), []);
+
+  const clearAll = useCallback(() => {
+    setTransactions([]);
+    setBudgets([]);
+    setCategories([]);
+    setProfile(null);
+    setUser(null);
+    setIsAuthenticated(false);
+  }, []);
 
   const addTransaction = useCallback(async (t: { name: string; amount: number; category: string; date: string }) => {
     const cat = categories.find(c => c.name === t.category);
@@ -153,7 +175,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <DataContext.Provider value={{ transactions, budgets, categoryData, categories, profile, user, isLoading, addTransaction, deleteTransaction, createBudget, deleteBudget, refetch }}>
+    <DataContext.Provider value={{
+      transactions, budgets, categoryData, categories, profile, user,
+      isLoading, isAuthenticated,
+      addTransaction, deleteTransaction, createBudget, deleteBudget,
+      refetch, clearAll,
+    }}>
       {children}
     </DataContext.Provider>
   );
