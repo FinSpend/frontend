@@ -62,3 +62,33 @@ export const createReport = (data: {
   periodStart: string;
   periodEnd: string;
 }) => api.post("/api/reports", data);
+
+// Wallets
+export const getWallets = () => api.get("/api/wallets");
+export const createWallet = (data: {
+  name: string;
+  type?: string;
+  bankCode?: string;
+  color?: string;
+  icon?: string;
+  initialBalance?: number;
+  isDefault?: boolean;
+}) => api.post("/api/wallets", data);
+export const updateWallet = (id: string, data: {
+  name?: string;
+  type?: string;
+  bankCode?: string;
+  color?: string;
+  icon?: string;
+  initialBalance?: number;
+  isDefault?: boolean;
+}) => api.put(`/api/wallets/${id}`, data);
+export const deleteWallet = (id: string) => api.delete(`/api/wallets/${id}`);
+export const getTransfers = () => api.get("/api/wallets/transfers");
+export const createTransfer = (data: {
+  fromWalletId: string;
+  toWalletId: string;
+  amount: number;
+  note?: string;
+  transferDate: string;
+}) => api.post("/api/wallets/transfer", data);

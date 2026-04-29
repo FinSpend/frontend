@@ -10,8 +10,9 @@ import {
   Target,
   Sparkles,
   FileText,
-  UserPlus,
+  BarChart3,
   Tag,
+  Wallet,
   Menu,
   X,
   Sun,
@@ -25,11 +26,12 @@ import { useData } from "@/app/lib/data-context";
 const tabs = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transaksi", icon: Receipt },
+  { href: "/wallets", label: "Dompet & Rekening", icon: Wallet },
   { href: "/budgeting", label: "Budgeting", icon: Target },
   { href: "/categories", label: "Kategori", icon: Tag },
   { href: "/ai-suggestions", label: "Saran AI", icon: Sparkles },
   { href: "/reports", label: "Laporan", icon: FileText },
-  { href: "/onboarding", label: "Onboarding", icon: UserPlus },
+  { href: "/onboarding", label: "Profil Keuangan", icon: BarChart3 },
 ];
 
 function getInitials(name: string): string {

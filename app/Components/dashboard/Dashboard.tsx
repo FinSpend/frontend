@@ -27,6 +27,37 @@ function getPeriodStart(period: Period): Date {
   }
 }
 
+function getPrevPeriodBounds(period: Period): { start: Date; end: Date } {
+  const now = new Date();
+  switch (period) {
+    case 'this_month':
+      return {
+        start: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+        end:   new Date(now.getFullYear(), now.getMonth(), 0),
+      };
+    case '3m':
+      return {
+        start: new Date(now.getFullYear(), now.getMonth() - 6, 1),
+        end:   new Date(now.getFullYear(), now.getMonth() - 3, 0),
+      };
+    case '6m':
+      return {
+        start: new Date(now.getFullYear(), now.getMonth() - 12, 1),
+        end:   new Date(now.getFullYear(), now.getMonth() - 6, 0),
+      };
+    case 'this_year':
+      return {
+        start: new Date(now.getFullYear() - 1, 0, 1),
+        end:   new Date(now.getFullYear() - 1, 11, 31),
+      };
+  }
+}
+
+function pctChange(curr: number, prev: number): number | null {
+  if (prev === 0) return null;
+  return ((curr - prev) / prev) * 100;
+}
+
 const computeTrend = (transactions: { date: string; amount: number }[]): TrendPoint[] => {
   const map: Record<string, { income: number; expense: number }> = {};
   transactions.forEach(t => {
@@ -59,7 +90,7 @@ const GOAL_LABELS: Record<string, { label: string; icon: string }> = {
 };
 
 export function Dashboard() {
-  const { transactions, budgets, categories, profile } = useData();
+  const { transactions, budgets, categories, wallets, profile } = useData();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
@@ -72,6 +103,19 @@ export function Dashboard() {
   const totalIncome  = filtered.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
   const totalExpense = filtered.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
   const balance = totalIncome - totalExpense;
+
+  // Previous period comparison
+  const prevBounds   = getPrevPeriodBounds(period);
+  const prevFiltered = transactions.filter(t => {
+    const d = new Date(t.date);
+    return d >= prevBounds.start && d <= prevBounds.end;
+  });
+  const prevIncome  = prevFiltered.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+  const prevExpense = prevFiltered.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+  const prevBalance = prevIncome - prevExpense;
+  const incomeChg  = pctChange(totalIncome, prevIncome);
+  const expenseChg = pctChange(totalExpense, prevExpense);
+  const balanceChg = pctChange(balance, prevBalance);
 
   const trendData = computeTrend(filtered);
   const recentTransactions = filtered.slice(0, 5);
@@ -124,6 +168,12 @@ export function Dashboard() {
                 Saldo ({periodLabel})
               </p>
               <p className="text-2xl font-semibold mt-1.5 dark:text-white">{formatIDR(balance)}</p>
+              {balanceChg !== null && (
+                <p className={`text-xs flex items-center gap-0.5 mt-1 ${balanceChg >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {balanceChg >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(balanceChg).toFixed(1)}% vs periode lalu
+                </p>
+              )}
             </div>
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center">
               <Wallet className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -138,6 +188,12 @@ export function Dashboard() {
                 Pemasukan ({periodLabel})
               </p>
               <p className="text-2xl font-semibold mt-1.5 text-green-600 dark:text-green-400">{formatIDR(totalIncome)}</p>
+              {incomeChg !== null && (
+                <p className={`text-xs flex items-center gap-0.5 mt-1 ${incomeChg >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {incomeChg >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(incomeChg).toFixed(1)}% vs periode lalu
+                </p>
+              )}
             </div>
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -152,6 +208,12 @@ export function Dashboard() {
                 Pengeluaran ({periodLabel})
               </p>
               <p className="text-2xl font-semibold mt-1.5 text-red-600 dark:text-red-400">{formatIDR(totalExpense)}</p>
+              {expenseChg !== null && (
+                <p className={`text-xs flex items-center gap-0.5 mt-1 ${expenseChg <= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {expenseChg <= 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
+                  {Math.abs(expenseChg).toFixed(1)}% vs periode lalu
+                </p>
+              )}
             </div>
             <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center">
               <TrendingDown className="w-6 h-6 text-red-600 dark:text-red-400" />
@@ -159,6 +221,33 @@ export function Dashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Wallet Summary */}
+      {wallets.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold dark:text-white">Dompet & Rekening</h3>
+            <a href="/wallets" className="flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Kelola <ArrowRight className="w-3 h-3" />
+            </a>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {wallets.slice(0, 4).map((w) => (
+              <Card key={w.id}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-base shrink-0" style={{ backgroundColor: (w.color || '#8b5cf6') + '25' }}>
+                    {w.icon || '💳'}
+                  </div>
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">{w.name}</p>
+                </div>
+                <p className={`text-sm font-bold ${w.balance >= 0 ? 'dark:text-white' : 'text-red-600 dark:text-red-400'}`} style={w.balance >= 0 ? { color: w.color || '#1f2937' } : {}}>
+                  {formatIDR(w.balance)}
+                </p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

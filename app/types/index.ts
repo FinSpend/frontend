@@ -15,6 +15,34 @@ export interface Transaction {
   name: string;
   category: string;
   amount: number;
+  walletId?: string | null;
+  walletName?: string | null;
+  walletColor?: string | null;
+}
+
+export interface Wallet {
+  id: string;
+  name: string;
+  type: string;
+  bankCode: string | null;
+  color: string | null;
+  icon: string | null;
+  initialBalance: number;
+  isDefault: boolean;
+  balance: number;
+  createdAt: string;
+}
+
+export interface Transfer {
+  id: string;
+  fromWalletId: string;
+  toWalletId: string;
+  amount: number;
+  note: string | null;
+  transferDate: string;
+  createdAt: string;
+  fromWallet: { id: string; name: string; color: string | null };
+  toWallet:   { id: string; name: string; color: string | null };
 }
 
 export interface Budget {
@@ -23,6 +51,8 @@ export interface Budget {
   spent: number;
   limit: number;
   icon: string;
+  period: string;
+  startDate: string;
 }
 
 export interface Category {

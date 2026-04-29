@@ -14,6 +14,7 @@ const schema = z.object({
   name: z.string().min(1, 'Nama transaksi wajib diisi').max(100, 'Maksimal 100 karakter'),
   category: z.string().min(1, 'Kategori wajib dipilih'),
   date: z.string().min(1, 'Tanggal wajib diisi'),
+  walletId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -24,7 +25,7 @@ interface AddTransactionProps {
 }
 
 export function AddTransaction({ onBack, onSuccess }: AddTransactionProps) {
-  const { addTransaction, categories } = useData();
+  const { addTransaction, categories, wallets } = useData();
   const { showToast } = useToast();
   const [type, setType] = useState<'income' | 'expense'>('expense');
 
@@ -60,6 +61,7 @@ export function AddTransaction({ onBack, onSuccess }: AddTransactionProps) {
         amount,
         category: values.category,
         date: values.date,
+        walletId: values.walletId || null,
       });
       showToast('Transaksi berhasil ditambahkan!');
       onSuccess?.('Transaksi berhasil ditambahkan!');
@@ -164,6 +166,23 @@ export function AddTransaction({ onBack, onSuccess }: AddTransactionProps) {
             </select>
             {errors.category && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{errors.category.message}</p>}
           </div>
+
+          {/* Wallet */}
+          {wallets.length > 0 && (
+            <div>
+              <label htmlFor="walletId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Wallet (opsional)</label>
+              <select
+                id="walletId"
+                {...register('walletId')}
+                className={inputClass(false)}
+              >
+                <option value="">Tidak terhubung ke wallet</option>
+                {wallets.map((w) => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Date */}
           <div>

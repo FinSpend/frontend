@@ -9,7 +9,7 @@ import {
 import { useData } from '@/app/lib/data-context';
 import { useToast } from '@/app/Components/ui/ToastProvider';
 import { formatIDR } from '@/app/lib/format';
-import { changePassword, deleteAccount, updateUser } from '@/app/services/userService';
+import { changePassword, deleteAccount, updateUser, upsertProfile } from '@/app/services/userService';
 import { UpgradeModal } from '@/app/Components/ui/UpgradeModal';
 import { useRouter } from 'next/navigation';
 
@@ -38,6 +38,8 @@ const GOAL_LABELS: Record<string, { label: string; icon: string }> = {
   debt:       { label: 'Lunasi Hutang', icon: '💳' },
 };
 
+const GOAL_OPTIONS = Object.entries(GOAL_LABELS).map(([key, val]) => ({ key, ...val }));
+
 const inputCls = 'w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors text-sm';
 
 export function ProfilePage() {
@@ -46,14 +48,27 @@ export function ProfilePage() {
   const router = useRouter();
 
   // modal states
-  const [showUpgrade, setShowUpgrade]     = useState(false);
-  const [showPassword, setShowPassword]   = useState(false);
-  const [showDelete, setShowDelete]       = useState(false);
-  const [showEditName, setShowEditName]   = useState(false);
+  const [showUpgrade, setShowUpgrade]         = useState(false);
+  const [showPassword, setShowPassword]       = useState(false);
+  const [showDelete, setShowDelete]           = useState(false);
+  const [showEditName, setShowEditName]       = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
   // edit name form
-  const [editNameValue, setEditNameValue] = useState('');
+  const [editNameValue, setEditNameValue]     = useState('');
   const [editNameLoading, setEditNameLoading] = useState(false);
+
+  // edit profil keuangan form
+  const [profileForm, setProfileForm] = useState({
+    monthlyIncome:  0,
+    monthlyExpense: 0,
+    currentSavings: 0,
+    occupation:     '',
+    incomeCurrency: 'IDR',
+    financialGoals: [] as string[],
+  });
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError]     = useState('');
 
   // password form
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
@@ -87,6 +102,55 @@ export function ProfilePage() {
   );
 
   // ── Handlers ──────────────────────────────────────────────────
+
+  const openEditProfile = () => {
+    setProfileForm({
+      monthlyIncome:  profile?.monthlyIncome  ?? 0,
+      monthlyExpense: profile?.monthlyExpense ?? 0,
+      currentSavings: profile?.currentSavings ?? 0,
+      occupation:     profile?.occupation     ?? '',
+      incomeCurrency: profile?.incomeCurrency ?? 'IDR',
+      financialGoals: profile?.financialGoals ?? [],
+    });
+    setProfileError('');
+    setShowEditProfile(true);
+  };
+
+  const toggleGoal = (key: string) => {
+    setProfileForm(f => ({
+      ...f,
+      financialGoals: f.financialGoals.includes(key)
+        ? f.financialGoals.filter(g => g !== key)
+        : [...f.financialGoals, key],
+    }));
+  };
+
+  const handleEditProfile = async (e: { preventDefault(): void }) => {
+    e.preventDefault();
+    if (profileForm.monthlyIncome < 0 || profileForm.monthlyExpense < 0 || profileForm.currentSavings < 0) {
+      setProfileError('Nilai tidak boleh negatif');
+      return;
+    }
+    setProfileLoading(true);
+    setProfileError('');
+    try {
+      await upsertProfile({
+        monthlyIncome:  profileForm.monthlyIncome,
+        monthlyExpense: profileForm.monthlyExpense,
+        currentSavings: profileForm.currentSavings,
+        occupation:     profileForm.occupation,
+        incomeCurrency: profileForm.incomeCurrency,
+        financialGoals: profileForm.financialGoals,
+      });
+      refetch();
+      setShowEditProfile(false);
+      showToast('Profil keuangan berhasil diperbarui');
+    } catch {
+      setProfileError('Gagal menyimpan profil keuangan');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   const handleEditName = async (e: { preventDefault(): void }) => {
     e.preventDefault();
@@ -258,9 +322,12 @@ export function ProfilePage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold dark:text-white">Profil Keuangan</h3>
-              <Link href="/settings" className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium">
+              <button
+                onClick={openEditProfile}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              >
                 Edit <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
+              </button>
             </div>
             <div className="space-y-3">
               {[
@@ -280,9 +347,12 @@ export function ProfilePage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold dark:text-white">Tujuan Finansial</h3>
-              <Link href="/settings" className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium">
+              <button
+                onClick={openEditProfile}
+                className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              >
                 Edit <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
+              </button>
             </div>
             {profile.financialGoals.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-32 text-center">
@@ -327,6 +397,96 @@ export function ProfilePage() {
 
       {/* ── Upgrade Modal ── */}
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
+
+      {/* ── Edit Profil Keuangan Modal ── */}
+      {showEditProfile && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
+                <h3 className="text-base font-semibold dark:text-white">Edit Profil Keuangan</h3>
+              </div>
+              <button onClick={() => setShowEditProfile(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleEditProfile} className="overflow-y-auto flex-1">
+              <div className="p-6 space-y-5">
+                {profileError && (
+                  <div className="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-700 dark:text-red-400">
+                    <AlertCircle className="w-4 h-4 shrink-0" />{profileError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4">
+                  {([
+                    { key: 'monthlyIncome',  label: 'Penghasilan Bulanan (Rp)' },
+                    { key: 'monthlyExpense', label: 'Pengeluaran Estimasi (Rp)' },
+                    { key: 'currentSavings', label: 'Tabungan Saat Ini (Rp)' },
+                  ] as const).map(({ key, label }) => (
+                    <div key={key}>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={profileForm[key] || ''}
+                        onChange={e => setProfileForm(f => ({ ...f, [key]: Number(e.target.value) }))}
+                        placeholder="0"
+                        className={inputCls}
+                      />
+                    </div>
+                  ))}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Profesi</label>
+                    <input
+                      type="text"
+                      value={profileForm.occupation}
+                      onChange={e => setProfileForm(f => ({ ...f, occupation: e.target.value }))}
+                      placeholder="contoh: Software Engineer"
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tujuan Finansial</label>
+                  <div className="flex flex-wrap gap-2">
+                    {GOAL_OPTIONS.map(({ key, label, icon }) => {
+                      const selected = profileForm.financialGoals.includes(key);
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => toggleGoal(key)}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
+                            selected
+                              ? 'bg-blue-600 border-blue-600 text-white'
+                              : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-blue-400'
+                          }`}
+                        >
+                          {icon} {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3 px-6 pb-6 shrink-0">
+                <button type="button" onClick={() => setShowEditProfile(false)}
+                  className="flex-1 py-2.5 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition-colors">
+                  Batal
+                </button>
+                <button type="submit" disabled={profileLoading}
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                  {profileLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Menyimpan…</> : 'Simpan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ── Edit Name Modal ── */}
       {showEditName && (

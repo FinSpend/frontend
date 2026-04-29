@@ -11,11 +11,12 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/transactions': 'Transaksi',
   '/transactions/new': 'Tambah Transaksi',
+  '/wallets': 'Dompet & Rekening',
   '/budgeting': 'Budgeting',
   '/categories': 'Kategori',
   '/ai-suggestions': 'Saran AI',
   '/reports': 'Laporan',
-  '/onboarding': 'Onboarding',
+  '/onboarding': 'Profil Keuangan',
   '/profile': 'Profil Saya',
   '/settings': 'Pengaturan Profil',
 };

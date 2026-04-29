@@ -214,7 +214,68 @@ export function Reports() {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* Period shortcuts */}
               <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Periode Cepat</p>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    {
+                      label: 'Bulan Ini',
+                      type: 'monthly',
+                      get: () => {
+                        const now = new Date();
+                        return {
+                          start: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`,
+                          end: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0],
+                        };
+                      },
+                    },
+                    {
+                      label: 'Bulan Lalu',
+                      type: 'monthly',
+                      get: () => {
+                        const now = new Date();
+                        const first = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                        const last  = new Date(now.getFullYear(), now.getMonth(), 0);
+                        return { start: first.toISOString().split('T')[0], end: last.toISOString().split('T')[0] };
+                      },
+                    },
+                    {
+                      label: 'Kuartal Ini',
+                      type: 'quarterly',
+                      get: () => {
+                        const now = new Date();
+                        const q = Math.floor(now.getMonth() / 3);
+                        const first = new Date(now.getFullYear(), q * 3, 1);
+                        const last  = new Date(now.getFullYear(), q * 3 + 3, 0);
+                        return { start: first.toISOString().split('T')[0], end: last.toISOString().split('T')[0] };
+                      },
+                    },
+                    {
+                      label: 'Tahun Ini',
+                      type: 'custom',
+                      get: () => {
+                        const y = new Date().getFullYear();
+                        return { start: `${y}-01-01`, end: `${y}-12-31` };
+                      },
+                    },
+                  ] as const).map(({ label, type, get }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => {
+                        const { start, end } = get();
+                        setFormData({ periodType: type as string, periodStart: start, periodEnd: end });
+                      }}
+                      className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl text-sm font-medium transition-colors"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tipe Periode</label>
                 <select
                   value={formData.periodType}

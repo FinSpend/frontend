@@ -1,6 +1,6 @@
 'use client'
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import type { Transaction, Budget, CategoryStat, Category, UserProfile, AuthUser } from '@/app/types';
+import type { Transaction, Budget, CategoryStat, Category, UserProfile, AuthUser, Wallet } from '@/app/types';
 import api from '@/app/services/api';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -24,12 +24,15 @@ interface RawTransaction {
   description?: string;
   transactionDate?: string;
   category?: { name?: string; color?: string; icon?: string };
+  wallet?: { id?: string; name?: string; color?: string | null } | null;
 }
 
 interface RawBudget {
   id: string;
   limitAmount: string | number;
   spent: number;
+  period?: string;
+  startDate?: string;
   category?: { name?: string; icon?: string };
 }
 
@@ -39,6 +42,9 @@ const mapTransaction = (t: RawTransaction): Transaction => ({
   name: t.description || '',
   category: t.category?.name || '',
   amount: t.type === 'expense' ? -Number(t.amount) : Number(t.amount),
+  walletId:    t.wallet?.id    ?? null,
+  walletName:  t.wallet?.name  ?? null,
+  walletColor: t.wallet?.color ?? null,
 });
 
 const mapBudget = (b: RawBudget): Budget => ({
@@ -47,6 +53,8 @@ const mapBudget = (b: RawBudget): Budget => ({
   spent: b.spent,
   limit: Number(b.limitAmount),
   icon: b.category?.icon || '💰',
+  period: b.period || 'monthly',
+  startDate: b.startDate ? (b.startDate as string).split('T')[0] : '',
 });
 
 const computeCategoryData = (transactions: Transaction[], categories: Category[]): CategoryStat[] => {
@@ -68,11 +76,12 @@ interface DataContextValue {
   budgets: Budget[];
   categoryData: CategoryStat[];
   categories: Category[];
+  wallets: Wallet[];
   profile: UserProfile | null;
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  addTransaction: (t: { name: string; amount: number; category: string; date: string }) => Promise<void>;
+  addTransaction: (t: { name: string; amount: number; category: string; date: string; walletId?: string | null }) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   createBudget: (data: { categoryId: string; limitAmount: number; period: string; startDate: string }) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
@@ -86,6 +95,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,11 +117,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setIsAuthenticated(true);
 
         // Fetch remaining data in parallel; profile may not exist yet (catch → null)
-        const [txRes, budgetRes, catRes, profileRes] = await Promise.all([
+        const [txRes, budgetRes, catRes, profileRes, walletRes] = await Promise.all([
           api.get('/api/transactions'),
           api.get('/api/budgets'),
           api.get('/api/categories'),
           api.get('/api/profile').catch(() => ({ data: { data: null } })),
+          api.get('/api/wallets').catch(() => ({ data: { data: [] } })),
         ]);
 
         if (cancelled) return;
@@ -119,6 +130,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setBudgets((budgetRes.data.data as RawBudget[] || []).map(mapBudget));
         setCategories((catRes.data.data as Category[]) || []);
         setProfile((profileRes.data.data as UserProfile) || null);
+        setWallets((walletRes.data.data as Wallet[]) || []);
       } catch {
         if (!cancelled) {
           setIsAuthenticated(false);
@@ -139,12 +151,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setTransactions([]);
     setBudgets([]);
     setCategories([]);
+    setWallets([]);
     setProfile(null);
     setUser(null);
     setIsAuthenticated(false);
   }, []);
 
-  const addTransaction = useCallback(async (t: { name: string; amount: number; category: string; date: string }) => {
+  const addTransaction = useCallback(async (t: { name: string; amount: number; category: string; date: string; walletId?: string | null }) => {
     const cat = categories.find(c => c.name === t.category);
     if (!cat) throw new Error('Kategori tidak ditemukan');
 
@@ -154,6 +167,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       amount: Math.abs(t.amount),
       description: t.name,
       transactionDate: t.date,
+      ...(t.walletId && { walletId: t.walletId }),
     });
 
     setRefreshKey(k => k + 1);
@@ -176,7 +190,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   return (
     <DataContext.Provider value={{
-      transactions, budgets, categoryData, categories, profile, user,
+      transactions, budgets, categoryData, categories, wallets, profile, user,
       isLoading, isAuthenticated,
       addTransaction, deleteTransaction, createBudget, deleteBudget,
       refetch, clearAll,
