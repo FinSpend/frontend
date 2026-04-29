@@ -90,11 +90,11 @@ export function AISuggestions() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl dark:text-white">Saran AI</h2>
+        <h2 className="text-2xl font-semibold dark:text-white">Saran AI</h2>
         <button
           onClick={handleGenerate}
           disabled={isGenerating}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-purple-700 disabled:opacity-50 transition-colors"
+          className="bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium text-sm"
         >
           <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
           {isGenerating ? 'Membuat...' : 'Minta Saran Baru'}
@@ -105,32 +105,34 @@ export function AISuggestions() {
       <Card>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg mb-1 dark:text-white">Skor Keuangan Anda</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Berdasarkan data transaksi Anda</p>
+            <h3 className="text-lg font-semibold mb-1 dark:text-white">Skor Keuangan Anda</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Berdasarkan data transaksi Anda</p>
           </div>
           <div className="text-right">
-            <div className={`text-4xl ${scoreColor}`}>{financialScore}</div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">/ 100</p>
+            <div className={`text-4xl font-bold ${scoreColor}`}>{financialScore}</div>
+            <p className="text-sm text-gray-400">/ 100</p>
           </div>
         </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+        <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5">
           <div
-            className="h-3 rounded-full bg-linear-to-r from-purple-500 to-pink-500 transition-all"
+            className="h-2.5 rounded-full bg-linear-to-r from-blue-500 to-indigo-500 transition-all"
             style={{ width: `${financialScore}%` }}
           />
         </div>
-        <p className={`text-sm mt-3 ${scoreColor}`}>
+        <p className={`text-sm mt-3 font-medium ${scoreColor}`}>
           {scoreLabel}.{' '}
-          {financialScore >= 60
-            ? 'Pertahankan kebiasaan baik ini!'
-            : 'Terapkan saran di bawah untuk meningkatkan skor Anda.'}
+          <span className="font-normal text-gray-500 dark:text-gray-400">
+            {financialScore >= 60
+              ? 'Pertahankan kebiasaan baik ini!'
+              : 'Terapkan saran di bawah untuk meningkatkan skor Anda.'}
+          </span>
         </p>
       </Card>
 
       {/* Active Suggestions */}
       <div>
-        <h3 className="mb-4 flex items-center gap-2 dark:text-white">
-          <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+        <h3 className="mb-4 flex items-center gap-2 font-semibold dark:text-white">
+          <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           Saran Aktif
         </h3>
         {isLoading ? (
@@ -139,16 +141,28 @@ export function AISuggestions() {
           </div>
         ) : activeSuggestions.length === 0 ? (
           <Card>
-            <p className="text-center text-gray-400 py-8">
-              Belum ada saran aktif. Klik &quot;Minta Saran Baru&quot; untuk mendapatkan rekomendasi berdasarkan data keuangan Anda.
-            </p>
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <Sparkles className="w-10 h-10 text-gray-200 dark:text-gray-600 mb-3" />
+              <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Belum ada saran aktif</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
+                Klik &quot;Minta Saran Baru&quot; untuk mendapatkan rekomendasi berdasarkan data keuangan Anda
+              </p>
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className="bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                Minta Saran Sekarang
+              </button>
+            </div>
           </Card>
         ) : (
           <div className="space-y-4">
             {activeSuggestions.map((suggestion) => (
               <Card key={suggestion.id}>
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{suggestion.content}</p>
-                <p className="text-xs text-gray-400 mb-3">
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">{suggestion.content}</p>
+                <p className="text-xs text-gray-400 mb-4">
                   {new Date(suggestion.createdAt).toLocaleDateString('id-ID', {
                     day: 'numeric', month: 'long', year: 'numeric',
                   })}
@@ -156,14 +170,14 @@ export function AISuggestions() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleApply(suggestion.id)}
-                    className="flex-1 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                    className="flex-1 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm font-medium"
                   >
                     Terapkan
                   </button>
                   {!suggestion.isRead && (
                     <button
                       onClick={() => handleDismiss(suggestion.id)}
-                      className="flex-1 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+                      className="flex-1 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
                     >
                       Abaikan
                     </button>
@@ -178,19 +192,19 @@ export function AISuggestions() {
       {/* Applied Suggestions History */}
       {appliedSuggestions.length > 0 && (
         <div>
-          <h3 className="mb-4 flex items-center gap-2 dark:text-white">
+          <h3 className="mb-4 flex items-center gap-2 font-semibold dark:text-white">
             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
             Saran yang Sudah Diterapkan
           </h3>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
             {appliedSuggestions.map((suggestion) => (
-              <div key={suggestion.id} className="p-4 flex items-start gap-3">
-                <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center shrink-0">
+              <div key={suggestion.id} className="p-4 flex items-start gap-3 first:rounded-t-2xl last:rounded-b-2xl">
+                <div className="w-9 h-9 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center shrink-0">
                   <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm dark:text-gray-300">{suggestion.content}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-sm dark:text-gray-300 leading-relaxed">{suggestion.content}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                     {new Date(suggestion.createdAt).toLocaleDateString('id-ID', {
                       day: 'numeric', month: 'long', year: 'numeric',
                     })}

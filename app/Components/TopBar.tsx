@@ -12,6 +12,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/transactions': 'Transaksi',
   '/transactions/new': 'Tambah Transaksi',
   '/budgeting': 'Budgeting',
+  '/categories': 'Kategori',
   '/ai-suggestions': 'Saran AI',
   '/reports': 'Laporan',
   '/onboarding': 'Onboarding',
@@ -76,7 +77,7 @@ export function TopBar() {
     <header className="hidden md:flex items-center justify-between px-8 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
       {/* Page Title */}
       <div>
-        <h1 className="text-xl text-gray-900 dark:text-white">{pageTitle}</h1>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{pageTitle}</h1>
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
           {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>

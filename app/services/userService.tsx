@@ -44,7 +44,16 @@ export const updateAISuggestion = (id: string, data: { isRead?: boolean; isAppli
 // Account
 export const changePassword = (data: { currentPassword: string; newPassword: string }) =>
   api.put('/auth/password', data);
+export const updateUser = (data: { name: string }) => api.put('/auth/me', data);
 export const deleteAccount = () => api.delete('/auth/me');
+
+// Categories
+export const getCategories = () => api.get('/api/categories');
+export const createCategory = (data: { name: string; type: string; icon?: string; color?: string }) =>
+  api.post('/api/categories', data);
+export const updateCategory = (id: string, data: { name?: string; icon?: string; color?: string; sortOrder?: number }) =>
+  api.put(`/api/categories/${id}`, data);
+export const deleteCategory = (id: string) => api.delete(`/api/categories/${id}`);
 
 // Reports
 export const getReports = () => api.get("/api/reports");

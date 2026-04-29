@@ -30,6 +30,10 @@ const professions = [
   'Lainnya',
 ];
 
+const inputClass = 'w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 text-sm transition-all';
+const prefixInputClass = 'w-full pl-12 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 text-sm transition-all';
+const labelClass = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2';
+
 interface OnboardingProps {
   onFinish?: () => void;
 }
@@ -106,8 +110,8 @@ export function Onboarding({ onFinish }: OnboardingProps) {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div className="text-center mb-8">
-        <h2 className="text-3xl mb-2">Selamat Datang! 👋</h2>
-        <p className="text-gray-600">Mari atur profil keuangan Anda untuk pengalaman yang lebih personal</p>
+        <h2 className="text-3xl font-semibold mb-2 dark:text-white">Selamat Datang! 👋</h2>
+        <p className="text-gray-500 dark:text-gray-400">Mari atur profil keuangan Anda untuk pengalaman yang lebih personal</p>
       </div>
 
       {/* Step Indicator */}
@@ -117,27 +121,27 @@ export function Onboarding({ onFinish }: OnboardingProps) {
             <div key={step.id} className="flex items-center flex-1">
               <div className="flex flex-col items-center flex-1">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
                     currentStep >= step.id
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-500'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
                   }`}
                   aria-label={`Langkah ${step.id}: ${step.title}${currentStep > step.id ? ' (selesai)' : currentStep === step.id ? ' (aktif)' : ''}`}
                 >
                   {currentStep > step.id ? (
-                    <CheckCircle className="w-6 h-6" />
+                    <CheckCircle className="w-5 h-5" />
                   ) : (
-                    <span>{step.id}</span>
+                    <span className="text-sm">{step.id}</span>
                   )}
                 </div>
-                <span className={`text-sm mt-2 ${currentStep >= step.id ? 'text-blue-600' : 'text-gray-500'}`}>
+                <span className={`text-xs font-medium mt-2 ${currentStep >= step.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`}>
                   {step.title}
                 </span>
               </div>
               {index < steps.length - 1 && (
                 <div
-                  className={`flex-1 h-1 mx-4 ${
-                    currentStep > step.id ? 'bg-blue-600' : 'bg-gray-200'
+                  className={`flex-1 h-0.5 mx-4 rounded-full transition-colors ${
+                    currentStep > step.id ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                   }`}
                 />
               )}
@@ -147,55 +151,55 @@ export function Onboarding({ onFinish }: OnboardingProps) {
 
         {/* Step 1: Financial Profile */}
         {currentStep === 1 && (
-          <div className="space-y-6">
-            <h3 className="text-xl mb-4">Profil Keuangan Anda</h3>
+          <div className="space-y-5">
+            <h3 className="text-xl font-semibold mb-4 dark:text-white">Profil Keuangan Anda</h3>
 
             <div>
-              <label htmlFor="monthlyIncome" className="block text-sm mb-2">
+              <label htmlFor="monthlyIncome" className={labelClass}>
                 Pemasukan Bulanan
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm font-medium">Rp</span>
                 <input
                   type="number"
                   id="monthlyIncome"
                   value={formData.monthlyIncome}
                   onChange={(e) => setFormData({ ...formData, monthlyIncome: e.target.value })}
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={prefixInputClass}
                   placeholder="5000000"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="monthlyExpense" className="block text-sm mb-2">
+              <label htmlFor="monthlyExpense" className={labelClass}>
                 Pengeluaran Bulanan (Estimasi)
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm font-medium">Rp</span>
                 <input
                   type="number"
                   id="monthlyExpense"
                   value={formData.monthlyExpense}
                   onChange={(e) => setFormData({ ...formData, monthlyExpense: e.target.value })}
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={prefixInputClass}
                   placeholder="3000000"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="currentSavings" className="block text-sm mb-2">
+              <label htmlFor="currentSavings" className={labelClass}>
                 Tabungan Saat Ini
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm font-medium">Rp</span>
                 <input
                   type="number"
                   id="currentSavings"
                   value={formData.currentSavings}
                   onChange={(e) => setFormData({ ...formData, currentSavings: e.target.value })}
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={prefixInputClass}
                   placeholder="10000000"
                 />
               </div>
@@ -205,29 +209,31 @@ export function Onboarding({ onFinish }: OnboardingProps) {
 
         {/* Step 2: Financial Goals */}
         {currentStep === 2 && (
-          <div className="space-y-6">
-            <h3 className="text-xl mb-4">Pilih Tujuan Finansial Anda</h3>
-            <p className="text-sm text-gray-600 mb-4">Pilih satu atau lebih tujuan yang ingin Anda capai</p>
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-xl font-semibold mb-1 dark:text-white">Pilih Tujuan Finansial Anda</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Pilih satu atau lebih tujuan yang ingin Anda capai</p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {financialGoals.map((goal) => (
                 <button
                   key={goal.id}
                   onClick={() => handleGoalToggle(goal.id)}
-                  className={`p-4 rounded-lg border-2 transition-all text-left ${
+                  className={`p-4 rounded-xl border-2 transition-all text-left ${
                     formData.selectedGoals.includes(goal.id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500 dark:bg-gray-800/50'
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <span className="text-3xl">{goal.icon}</span>
-                    <div className="flex-1">
-                      <h4 className="mb-1">{goal.title}</h4>
-                      <p className="text-sm text-gray-600">{goal.description}</p>
+                    <span className="text-2xl">{goal.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold mb-0.5 dark:text-white">{goal.title}</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{goal.description}</p>
                     </div>
                     {formData.selectedGoals.includes(goal.id) && (
-                      <CheckCircle className="w-6 h-6 text-blue-600 shrink-0" />
+                      <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
                     )}
                   </div>
                 </button>
@@ -238,18 +244,18 @@ export function Onboarding({ onFinish }: OnboardingProps) {
 
         {/* Step 3: Profession */}
         {currentStep === 3 && (
-          <div className="space-y-6">
-            <h3 className="text-xl mb-4">Informasi Pekerjaan</h3>
+          <div className="space-y-5">
+            <h3 className="text-xl font-semibold mb-4 dark:text-white">Informasi Pekerjaan</h3>
 
             <div>
-              <label htmlFor="profession" className="block text-sm mb-2">
+              <label htmlFor="profession" className={labelClass}>
                 Profesi
               </label>
               <select
                 id="profession"
                 value={formData.profession}
                 onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
               >
                 <option value="">Pilih profesi</option>
                 {professions.map((prof) => (
@@ -261,7 +267,7 @@ export function Onboarding({ onFinish }: OnboardingProps) {
             </div>
 
             <div>
-              <label htmlFor="dependents" className="block text-sm mb-2">
+              <label htmlFor="dependents" className={labelClass}>
                 Jumlah Tanggungan
               </label>
               <input
@@ -269,21 +275,21 @@ export function Onboarding({ onFinish }: OnboardingProps) {
                 id="dependents"
                 value={formData.dependents}
                 onChange={(e) => setFormData({ ...formData, dependents: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
                 min="0"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
                 Termasuk pasangan, anak, atau orang tua yang Anda tanggung
               </p>
             </div>
 
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <h4 className="mb-2">Ringkasan Profil Anda</h4>
-              <div className="space-y-1 text-sm text-gray-700">
-                <p>• Pemasukan: {formatIDR(Number(formData.monthlyIncome || 0))}</p>
-                <p>• Pengeluaran: {formatIDR(Number(formData.monthlyExpense || 0))}</p>
-                <p>• Tabungan: {formatIDR(Number(formData.currentSavings || 0))}</p>
-                <p>• Tujuan: {formData.selectedGoals.length} tujuan dipilih</p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
+              <h4 className="text-sm font-semibold mb-2 dark:text-blue-200">Ringkasan Profil Anda</h4>
+              <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                <p>• Pemasukan: <span className="font-medium text-green-600 dark:text-green-400">{formatIDR(Number(formData.monthlyIncome || 0))}</span></p>
+                <p>• Pengeluaran: <span className="font-medium text-red-500 dark:text-red-400">{formatIDR(Number(formData.monthlyExpense || 0))}</span></p>
+                <p>• Tabungan: <span className="font-medium text-blue-600 dark:text-blue-400">{formatIDR(Number(formData.currentSavings || 0))}</span></p>
+                <p>• Tujuan: <span className="font-medium">{formData.selectedGoals.length} tujuan dipilih</span></p>
               </div>
             </div>
           </div>
@@ -291,18 +297,18 @@ export function Onboarding({ onFinish }: OnboardingProps) {
 
         {/* Error */}
         {error && (
-          <p className="mt-4 text-sm text-red-600 text-center">{error}</p>
+          <p className="mt-4 text-sm text-red-600 dark:text-red-400 text-center">{error}</p>
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between mt-8">
+        <div className="flex justify-between mt-8 gap-3">
           <button
             onClick={handleBack}
             disabled={currentStep === 1 || isLoading}
-            className={`px-6 py-3 rounded-lg transition-colors ${
+            className={`px-6 py-3 rounded-xl transition-colors font-medium text-sm ${
               currentStep === 1 || isLoading
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             Kembali
@@ -310,7 +316,7 @@ export function Onboarding({ onFinish }: OnboardingProps) {
           <button
             onClick={handleNext}
             disabled={isLoading}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 font-medium text-sm"
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             {currentStep === 3 ? (isLoading ? 'Menyimpan...' : 'Selesai') : 'Lanjut'}

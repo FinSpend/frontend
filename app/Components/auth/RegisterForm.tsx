@@ -108,7 +108,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
     `w-full pl-10 pr-4 py-3 text-sm border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 transition-all ${
       fieldErrors[field]
         ? 'border-red-400 focus:ring-red-200'
-        : 'border-gray-200 focus:ring-[#0047AB]/25 focus:border-[#0047AB]'
+        : 'border-gray-200 focus:ring-blue-600/25 focus:border-blue-600'
     }`;
 
   return (
@@ -118,7 +118,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         <div className="inline-flex items-center justify-center mb-4">
           <Image src="/Logo_FinSpend.png" alt="FinSpend" width={220} height={220} priority />
         </div>
-        <h1 className="text-2xl text-gray-900 mb-1">Buat akun baru</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 mb-1">Buat akun baru</h1>
         <p className="text-sm text-gray-500">Mulai kelola keuangan Anda bersama FinSpend</p>
       </div>
 
@@ -134,7 +134,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         <form onSubmit={handleSubmit} noValidate className="space-y-5">
           {/* Name */}
           <div>
-            <label htmlFor="name" className="block text-sm text-gray-700 mb-1.5">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
               Nama Lengkap
             </label>
             <div className="relative">
@@ -156,7 +156,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
           {/* Email */}
           <div>
-            <label htmlFor="reg-email" className="block text-sm text-gray-700 mb-1.5">
+            <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1.5">
               Email
             </label>
             <div className="relative">
@@ -178,7 +178,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
           {/* Password */}
           <div>
-            <label htmlFor="reg-password" className="block text-sm text-gray-700 mb-1.5">
+            <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1.5">
               Password
             </label>
             <div className="relative">
@@ -231,7 +231,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
           {/* Confirm Password */}
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm text-gray-700 mb-1.5">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
               Konfirmasi Password
             </label>
             <div className="relative">
@@ -272,13 +272,13 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                 setAgreed(e.target.checked);
                 if (error.includes('syarat')) setError('');
               }}
-              className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-[#0047AB]"
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-blue-600"
             />
             <span className="text-sm text-gray-600 leading-relaxed">
               Saya menyetujui{' '}
-              <Link href="/terms" className="text-[#0047AB] hover:underline">Syarat & Ketentuan</Link>
+              <Link href="/terms" className="text-blue-600 hover:underline">Syarat & Ketentuan</Link>
               {' '}dan{' '}
-              <Link href="/privacy" className="text-[#0047AB] hover:underline">Kebijakan Privasi</Link>
+              <Link href="/privacy" className="text-blue-600 hover:underline">Kebijakan Privasi</Link>
               {' '}FinSpend
             </span>
           </label>
@@ -287,7 +287,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-4 bg-[#0047AB] text-white text-sm rounded-xl hover:bg-[#003d99] active:bg-[#003080] focus:outline-none focus:ring-2 focus:ring-[#0047AB]/50 focus:ring-offset-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+            className="w-full py-3 px-4 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-600/50 focus:ring-offset-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
           >
             {isLoading ? (
               <>
@@ -304,7 +304,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
       <p className="text-center text-sm text-gray-500 mt-6">
         Sudah punya akun?{' '}
-        <Link href="/login" className="text-[#0047AB] hover:underline">
+        <Link href="/login" className="text-blue-600 hover:underline font-medium">
           Masuk di sini
         </Link>
       </p>

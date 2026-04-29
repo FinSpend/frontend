@@ -11,10 +11,13 @@ import {
   Sparkles,
   FileText,
   UserPlus,
+  Tag,
   Menu,
   X,
   Sun,
   Moon,
+  LogOut,
+  Crown,
 } from "lucide-react";
 import { logout } from "../services/userService";
 import { useData } from "@/app/lib/data-context";
@@ -23,17 +26,41 @@ const tabs = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transaksi", icon: Receipt },
   { href: "/budgeting", label: "Budgeting", icon: Target },
+  { href: "/categories", label: "Kategori", icon: Tag },
   { href: "/ai-suggestions", label: "Saran AI", icon: Sparkles },
   { href: "/reports", label: "Laporan", icon: FileText },
   { href: "/onboarding", label: "Onboarding", icon: UserPlus },
 ];
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase();
+}
+
+function getAvatarColor(name: string): string {
+  const colors = [
+    'bg-blue-500', 'bg-purple-500', 'bg-green-500',
+    'bg-rose-500', 'bg-amber-500', 'bg-indigo-500', 'bg-teal-500',
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
 
 export function Sidebar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const { clearAll } = useData();
+  const { clearAll, user } = useData();
+
+  const isPremium = user?.plan === 'premium';
+  const initials = user ? getInitials(user.name) : '?';
+  const avatarColor = user ? getAvatarColor(user.name) : 'bg-gray-400';
 
   const handleLogout = async () => {
     if (!confirm("Apakah Anda yakin ingin keluar?")) return;
@@ -62,7 +89,7 @@ export function Sidebar() {
       <header className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3 z-20">
         <button
           onClick={() => setOpen(true)}
-          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
           aria-label="Buka menu navigasi"
         >
           <Menu className="w-5 h-5 dark:text-white" />
@@ -95,7 +122,7 @@ export function Sidebar() {
           />
           <button
             onClick={() => setOpen(false)}
-            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
             aria-label="Tutup menu"
           >
             <X className="w-5 h-5 dark:text-white" />
@@ -114,25 +141,42 @@ export function Sidebar() {
                   href={tab.href}
                   onClick={() => setOpen(false)}
                   aria-current={isActive ? "page" : undefined}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
                     isActive
                       ? "bg-blue-600 text-white"
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
-                  <span className="text-sm">{tab.label}</span>
+                  <span className="text-sm font-medium">{tab.label}</span>
                 </Link>
               );
             })}
           </div>
         </nav>
 
-        {/* Mobile only: dark mode + logout */}
-        <div className="md:hidden p-4 border-t border-gray-200 dark:border-gray-700 space-y-1">
+        {/* Bottom section — user info + actions */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-1">
+          {/* User info (desktop) */}
+          {user && (
+            <div className="hidden md:flex items-center gap-3 px-4 py-3 mb-1">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs shrink-0 ${avatarColor}`}>
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{user.name}</p>
+                <p className={`text-xs flex items-center gap-1 ${isPremium ? 'text-amber-500' : 'text-gray-400'}`}>
+                  {isPremium && <Crown className="w-3 h-3" />}
+                  {isPremium ? 'Premium' : 'Free'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Mobile: dark mode toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="md:hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             aria-label="Toggle dark mode"
           >
             {theme === 'dark' ? (
@@ -140,22 +184,16 @@ export function Sidebar() {
             ) : (
               <Moon className="w-5 h-5" />
             )}
-            <span className="text-sm">{theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}</span>
+            <span className="text-sm font-medium">{theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}</span>
           </button>
 
+          {/* Logout */}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-            <span className="text-sm">Logout</span>
+            <LogOut className="w-5 h-5" />
+            <span className="text-sm font-medium">Keluar</span>
           </button>
         </div>
       </aside>
