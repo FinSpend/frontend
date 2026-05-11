@@ -1,22 +1,11 @@
 import api from "./api";
 
 // Auth
-export const register = async (data: { name: string; email: string; password: string }) => {
-  const res = await api.post("/auth/register", data);
-  const token = res.data?.data?.token;
-  if (typeof window !== "undefined" && token) localStorage.setItem("auth_token", token);
-  return res;
-};
-export const login = async (data: { email: string; password: string }) => {
-  const res = await api.post("/auth/login", data);
-  const token = res.data?.data?.token;
-  if (typeof window !== "undefined" && token) localStorage.setItem("auth_token", token);
-  return res;
-};
-export const logout = async () => {
-  if (typeof window !== "undefined") localStorage.removeItem("auth_token");
-  return api.post("/auth/logout");
-};
+export const register = (data: { name: string; email: string; password: string }) =>
+  api.post("/auth/register", data);
+export const login = (data: { email: string; password: string }) =>
+  api.post("/auth/login", data);
+export const logout = () => api.post("/auth/logout");
 export const getMe = () => api.get("/auth/me");
 
 // Profile

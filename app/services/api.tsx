@@ -9,17 +9,6 @@ const api = axios.create({
   timeout: 15000,
 });
 
-api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("auth_token");
-    const isPublic = config.url === "/auth/login" || config.url === "/auth/register";
-    if (token && !isPublic) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
-
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -28,7 +17,6 @@ api.interceptors.response.use(
       typeof window !== "undefined" &&
       !window.location.pathname.startsWith("/login")
     ) {
-      localStorage.removeItem("auth_token");
       window.location.href = "/login";
     }
     return Promise.reject(error);
