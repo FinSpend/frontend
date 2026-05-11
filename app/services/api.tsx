@@ -12,8 +12,12 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Skip redirect if skipAuthRedirect flag is set (e.g., for landing page)
+    const skipAuthRedirect = (error.config as any)?.skipAuthRedirect;
+    
     if (
       error.response?.status === 401 &&
+      !skipAuthRedirect &&
       typeof window !== "undefined" &&
       !window.location.pathname.startsWith("/login")
     ) {

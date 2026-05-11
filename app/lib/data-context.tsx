@@ -109,8 +109,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const load = async () => {
       try {
-        // Verify auth first — if this throws 401, interceptor redirects to /login
-        const userRes = await api.get('/auth/me');
+        // Verify auth first — skip auto redirect for 401 to allow landing page logic
+        const userRes = await api.get('/auth/me', { 
+          skipAuthRedirect: true 
+        } as any);
         if (cancelled) return;
 
         setUser(userRes.data.data as AuthUser);

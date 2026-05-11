@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import RootPageWrapper from '@/app/Components/landing/RootPageWrapper';
 
 export default function RootPage() {
-  redirect('/dashboard');
+  return <RootPageWrapper />;
 }
